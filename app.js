@@ -90,34 +90,39 @@ const S = {
   myEmoji: AVATARS[0],
   isHost: false,
   roomCode: null,
-  currentTask: null,   // задача текущего раунда (для этого игрока)
+  currentTask: null,
   submitted: false,
   timerInterval: null,
-  drawApi: null,       // API канваса рисования текущего раунда
+  drawApi: null,
 };
 
 /* ---------------------------- СЕТЬ (PeerJS) ---------------------------- */
 
 const Net = {
   peer: null,
-  conns: {},        // (только на хосте) id клиента -> DataConnection
-  hostConn: null,    // (только на клиенте) DataConnection к хосту
+  conns: {},
+  hostConn: null,
 
   /** Хост создаёт комнату с коротким кодом. */
   createRoom(code) {
     return new Promise((resolve, reject) => {
       const fullId = ROOM_PREFIX + code;
+      
+      // Исправленная конфигурация для работы в РФ
       const peer = new Peer(fullId, {
-  debug: 0,
-  config: {
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'stun:stun.services.mozilla.com:3478' }
-    ]
-  }
-});
+        debug: 0,
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun.services.mozilla.com:3478' },
+            { urls: 'stun:stun.ekiga.net:3478' }
+          ]
+        }
+      });
+      
       let settled = false;
+      
       peer.on('open', (id) => {
         settled = true;
         this.peer = peer;
@@ -125,9 +130,14 @@ const Net = {
         peer.on('error', (err) => this._onPeerError(err));
         resolve(id);
       });
+      
       peer.on('error', (err) => {
-        if (!settled) reject(err);
-        else this._onPeerError(err);
+        if (!settled) {
+          console.error('Ошибка создания комнаты:', err);
+          reject(err);
+        } else {
+          this._onPeerError(err);
+        }
       });
     });
   },
@@ -135,10 +145,23 @@ const Net = {
   /** Клиент подключается к комнате по коду. */
   joinRoom(code) {
     return new Promise((resolve, reject) => {
-      const peer = new Peer({ debug: 0 });
+      // Исправленная конфигурация для работы в РФ
+      const peer = new Peer({
+        debug: 0,
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun.services.mozilla.com:3478' },
+            { urls: 'stun:stun.ekiga.net:3478' }
+          ]
+        }
+      });
+      
       peer.on('open', () => {
         const conn = peer.connect(ROOM_PREFIX + code, { reliable: true, serialization: 'json' });
         let done = false;
+        
         conn.on('open', () => {
           done = true;
           this.peer = peer;
@@ -147,11 +170,33 @@ const Net = {
           conn.on('close', () => Client.onHostLost());
           resolve(peer.id);
         });
-        conn.on('error', (err) => { if (!done) reject(err); });
-        peer.on('error', (err) => { if (!done) reject(err); });
-        setTimeout(() => { if (!done) reject(new Error('timeout')); }, 12000);
+        
+        conn.on('error', (err) => { 
+          if (!done) {
+            console.error('Ошибка подключения:', err);
+            reject(err); 
+          }
+        });
+        
+        peer.on('error', (err) => { 
+          if (!done) {
+            console.error('Ошибка peer:', err);
+            reject(err); 
+          }
+        });
+        
+        setTimeout(() => { 
+          if (!done) {
+            console.error('Таймаут подключения');
+            reject(new Error('timeout')); 
+          }
+        }, 12000);
       });
-      peer.on('error', (err) => reject(err));
+      
+      peer.on('error', (err) => {
+        console.error('Ошибка peer:', err);
+        reject(err);
+      });
     });
   },
 
@@ -176,7 +221,7 @@ const Net = {
   /** Хост -> все игроки. */
   broadcast(msg) {
     Object.keys(this.conns).forEach((id) => { if (this.conns[id].open) this.conns[id].send(msg); });
-    Client.handleHostMsg(msg); // хост сам себе — та же логика рендера
+    Client.handleHostMsg(msg);
   },
 
   /** Клиент -> хост. Если мы и есть хост — вызываем обработчик напрямую. */
@@ -189,10 +234,10 @@ const Net = {
 /* ---------------------------- ХОСТ: игровой движок ---------------------------- */
 
 const Host = {
-  players: [],       // {id, name, emoji, active}
+  players: [],
   settings: { phrase: 45, draw: 75, meme: 45 },
-  phase: 'lobby',    // lobby | playing | reveal | voting | results
-  order: [],         // фиксированный порядок id на партию
+  phase: 'lobby',
+  order: [],
   chains: [],
   round: 0,
   totalRounds: 0,
@@ -209,7 +254,10 @@ const Host = {
 
   addPlayer(id, name, emoji) {
     if (this.players.some((p) => p.id === id)) return;
-    if (this.players.length >= MAX_PLAYERS) { Net.sendTo(id, { t: 'toast', msg: 'Комната заполнена (максимум 8 игроков).' }); return; }
+    if (this.players.length >= MAX_PLAYERS) { 
+      Net.sendTo(id, { t: 'toast', msg: 'Комната заполнена (максимум 8 игроков).' }); 
+      return; 
+    }
     this.players.push({ id, name: name || 'Игрок', emoji: emoji || '❓', active: true });
   },
 
@@ -221,7 +269,7 @@ const Host = {
     } else {
       p.active = false;
       if (this.phase === 'playing' && this.pending[id] === undefined) {
-        this.pending[id] = null; // синтезируем заглушку при подведении итога раунда
+        this.pending[id] = null;
         this._maybeFinishRound();
       }
     }
@@ -394,14 +442,31 @@ const Host = {
 
   revealNext() {
     const chain = this.chains[this.revealChain];
-    if (this.revealEntry < chain.length - 1) { this.revealEntry++; this._broadcastReveal(); return; }
-    if (this.revealChain < this.chains.length - 1) { this.revealChain++; this.revealEntry = 0; this._broadcastReveal(); return; }
+    if (this.revealEntry < chain.length - 1) { 
+      this.revealEntry++; 
+      this._broadcastReveal(); 
+      return; 
+    }
+    if (this.revealChain < this.chains.length - 1) { 
+      this.revealChain++; 
+      this.revealEntry = 0; 
+      this._broadcastReveal(); 
+      return; 
+    }
     this._startVoting();
   },
 
   revealPrev() {
-    if (this.revealEntry > 0) { this.revealEntry--; this._broadcastReveal(); return; }
-    if (this.revealChain > 0) { this.revealChain--; this.revealEntry = this.chains[this.revealChain].length - 1; this._broadcastReveal(); }
+    if (this.revealEntry > 0) { 
+      this.revealEntry--; 
+      this._broadcastReveal(); 
+      return; 
+    }
+    if (this.revealChain > 0) { 
+      this.revealChain--; 
+      this.revealEntry = this.chains[this.revealChain].length - 1; 
+      this._broadcastReveal(); 
+    }
   },
 
   /* ---------- голосование ---------- */
@@ -417,7 +482,9 @@ const Host = {
     }));
     Net.broadcast({ t: 'voteState', options });
     clearTimeout(this.voteTimer);
-    this.voteTimer = setTimeout(() => { if (this.phase === 'voting') this._finishVoting(); }, 45000);
+    this.voteTimer = setTimeout(() => { 
+      if (this.phase === 'voting') this._finishVoting(); 
+    }, 45000);
   },
 
   _onVote(fromId, chainIndex) {
@@ -426,15 +493,24 @@ const Host = {
     const active = this._activeIds();
     const done = Object.keys(this.votes).length;
     Net.broadcast({ t: 'voteProgress', done, total: active.length });
-    if (active.every((id) => this.votes[id] !== undefined)) { clearTimeout(this.voteTimer); this._finishVoting(); }
+    if (active.every((id) => this.votes[id] !== undefined)) { 
+      clearTimeout(this.voteTimer); 
+      this._finishVoting(); 
+    }
   },
 
   _finishVoting() {
     clearTimeout(this.voteTimer);
     const tally = this.chains.map(() => 0);
-    Object.values(this.votes).forEach((ci) => { if (tally[ci] !== undefined) tally[ci]++; });
+    Object.values(this.votes).forEach((ci) => { 
+      if (tally[ci] !== undefined) tally[ci]++; 
+    });
     const ranking = this.chains
-      .map((c, i) => ({ index: i, votes: tally[i], firstAuthorName: c[0] ? c[0].authorName : '???' }))
+      .map((c, i) => ({ 
+        index: i, 
+        votes: tally[i], 
+        firstAuthorName: c[0] ? c[0].authorName : '???' 
+      }))
       .sort((a, b) => b.votes - a.votes);
     this.phase = 'results';
     Net.broadcast({ t: 'results', ranking });
@@ -598,12 +674,18 @@ const Client = {
     spacer.className = 'tool-spacer';
     toolRow.appendChild(spacer);
     const undoBtn = document.createElement('button');
-    undoBtn.type = 'button'; undoBtn.className = 'btn btn-ghost btn-small'; undoBtn.style.color = '#1c1a15'; undoBtn.style.borderColor = '#1c1a15';
+    undoBtn.type = 'button'; 
+    undoBtn.className = 'btn btn-ghost btn-small'; 
+    undoBtn.style.color = '#1c1a15'; 
+    undoBtn.style.borderColor = '#1c1a15';
     undoBtn.textContent = '↩️ Отменить';
     undoBtn.addEventListener('click', () => api.undo());
     toolRow.appendChild(undoBtn);
     const clearBtn = document.createElement('button');
-    clearBtn.type = 'button'; clearBtn.className = 'btn btn-ghost btn-small'; clearBtn.style.color = '#1c1a15'; clearBtn.style.borderColor = '#1c1a15';
+    clearBtn.type = 'button'; 
+    clearBtn.className = 'btn btn-ghost btn-small'; 
+    clearBtn.style.color = '#1c1a15'; 
+    clearBtn.style.borderColor = '#1c1a15';
     clearBtn.textContent = '🗑 Очистить';
     clearBtn.addEventListener('click', () => api.clear());
     toolRow.appendChild(clearBtn);
@@ -642,7 +724,7 @@ const Client = {
     const totalMs = Math.max(1, deadline - Date.now());
     const startTotal = totalMs;
     const ring = $('#timer-ring-fg');
-    const CIRC = 107; // 2*pi*17
+    const CIRC = 107;
     const tick = () => {
       const remain = deadline - Date.now();
       const secs = Math.max(0, Math.ceil(remain / 1000));
@@ -668,7 +750,8 @@ const Client = {
     if (task.type === 'draw') {
       payload = { strokes: S.drawApi ? S.drawApi.getStrokes() : [] };
     } else if (task.type === 'meme') {
-      const top = $('#input-top'); const bottom = $('#input-bottom');
+      const top = $('#input-top'); 
+      const bottom = $('#input-bottom');
       payload = { top: top ? top.value.trim() : '', bottom: bottom ? (bottom.value.trim() || '...') : '...' };
     } else {
       const ta = $('#input-phrase');
@@ -711,7 +794,8 @@ const Client = {
       `;
       requestAnimationFrame(() => {
         const c = card.querySelector('canvas');
-        c.width = CANVAS_W; c.height = CANVAS_H;
+        c.width = CANVAS_W; 
+        c.height = CANVAS_H;
         renderStrokesToCanvas(c, entry.content.strokes || []);
       });
     } else if (entry.type === 'meme') {
@@ -725,7 +809,8 @@ const Client = {
       `;
       requestAnimationFrame(() => {
         const c = card.querySelector('canvas');
-        c.width = CANVAS_W; c.height = CANVAS_H;
+        c.width = CANVAS_W; 
+        c.height = CANVAS_H;
         renderStrokesToCanvas(c, entry.sourceStrokes || []);
       });
     }
@@ -888,11 +973,7 @@ function renderStrokesToCanvas(canvas, strokes) {
   (strokes || []).forEach((s) => paintStroke(ctx, s));
 }
 
-/* ---------------------------- ПОДКЛЮЧЕНИЕ РЕВОЛВЕР-МЕМА К РИСУНКУ ----------------------------
-   Ведущий хранит рисунок и подпись как отдельные шаги истории. Чтобы на экране показа
-   истории под мемом снова появился тот же рисунок, хост при рассылке revealState
-   подмешивает сырые strokes из предыдущего шага прямо в entry. Делается здесь,
-   а не в Host, чтобы не раздувать сетевой трафик лишним состоянием. */
+/* ---------------------------- ПОДКЛЮЧЕНИЕ РЕВОЛВЕР-МЕМА К РИСУНКУ ---------------------------- */
 (function patchHostRevealForMemeSource() {
   const orig = Host._broadcastReveal.bind(Host);
   Host._broadcastReveal = function () {
