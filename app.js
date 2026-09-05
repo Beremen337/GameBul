@@ -107,7 +107,16 @@ const Net = {
   createRoom(code) {
     return new Promise((resolve, reject) => {
       const fullId = ROOM_PREFIX + code;
-      const peer = new Peer(fullId, { debug: 0 });
+      const peer = new Peer(fullId, {
+  debug: 0,
+  config: {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun.services.mozilla.com:3478' }
+    ]
+  }
+});
       let settled = false;
       peer.on('open', (id) => {
         settled = true;
