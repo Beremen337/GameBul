@@ -334,7 +334,7 @@ const SFX = {
 };
 function vibrate(ms){ if(SAVE.settings.vibe && navigator.vibrate) navigator.vibrate(ms); }
 
-// простая процедурная фоновая музыка: несколько нот по кругу, разные для зон
+// простая процедурная фоновая музыка
 let musicTimer=null, musicPatternIndex=0;
 const MUSIC_PATTERNS = {
   smakograd:[262,330,392,330,294,330,392,440],
@@ -412,7 +412,7 @@ joyZone.addEventListener('touchend', e=>{
   for(const t of e.changedTouches){ if(t.identifier===joyTouchId) joyEnd(); }
 }, {passive:false});
 joyZone.addEventListener('touchcancel', joyEnd);
-// mouse fallback for desktop testing on joy zone
+// mouse fallback
 joyZone.addEventListener('mousedown', e=>{ const r=joyZone.getBoundingClientRect(); joyStart('mouse', e.clientX-r.left, e.clientY-r.top); });
 window.addEventListener('mousemove', e=>{ if(joyActive && joyTouchId==='mouse'){ const r=joyZone.getBoundingClientRect(); joyMove(e.clientX-r.left, e.clientY-r.top);} });
 window.addEventListener('mouseup', e=>{ if(joyTouchId==='mouse') joyEnd(); });
@@ -521,7 +521,7 @@ const player = {
   facing:1,
   hp:100, maxHp:100,
   rage:0, maxRage:100,
-  state:'idle', // idle, walk, jump, fall, attack, dash, hurt, dead, victory, taunt
+  state:'idle',
   stateTimer:0,
   attackTimer:0,
   attackHitDone:false,
@@ -536,10 +536,11 @@ const player = {
 const MOVE_SPEED = 165;
 const JUMP_VELOCITY = -700;
 const GRAV_BASE = 1350;
-let gravityMult = 1; // может меняться боссом Котомка
+let gravityMult = 1;
 const DASH_SPEED = 480;
 const DASH_TIME = 0.18;
 const DASH_COOLDOWN_MAX = 0.9;
+const ATTACK_DAMAGE = 35; // Увеличенный урон
 
 function resetPlayerStats(){
   player.hp = player.maxHp;
@@ -572,7 +573,6 @@ function damagePlayer(amount, knockDir){
 /* ============================================================
    УРОВНИ: ДАННЫЕ
 ============================================================ */
-// каждая зона: platforms, hazards, enemies, collectibles, checkpoints, width, bg-стиль, диалоги, boss
 const ZONES = [];
 
 function makeZone(cfg){ ZONES.push(cfg); }
@@ -830,7 +830,7 @@ class Enemy{
     this.w = 28; this.h = 28;
     this.vx = this.type==='walker'? 60 : 0;
     this.vy = 0;
-    this.hp = this.type==='walker'?30:(this.type==='jumper'?36:26);
+    this.hp = this.type==='walker'?25:(this.type==='jumper'?30:22);
     this.dead=false;
     this.range = def.range || null;
     this.dir = 1;
@@ -847,12 +847,6 @@ class Projectile{
   }
 }
 let projectiles = [];
-
-function placeEnemiesOnGround(zone){
-  for(const e of zone.enemyInstances){
-    e.groundY = zone.def.groundY - e.h;
-  }
-}
 
 function updateEnemy(e, dt, zone){
   if(e.dead) return;
@@ -887,11 +881,10 @@ function updateEnemy(e, dt, zone){
   }
   if(e.hitFlash>0) e.hitFlash -= dt;
 
-  // столкновение с игроком (контактный урон)
   const pb = {x:player.x, y:player.y, w:player.w, h:player.h};
   const eb = {x:e.x, y:e.y, w:e.w, h:e.h};
   if(rectsOverlap(pb,eb) && player.invuln<=0 && player.state!=='dead'){
-    damagePlayer(8, player.x < e.x ? -1:1);
+    damagePlayer(6, player.x < e.x ? -1:1);
   }
 }
 
@@ -933,11 +926,12 @@ function drawEnemy(e){
 }
 
 /* ============================================================
-   БОССЫ
+   БОССЫ С ВИЗУАЛЬНЫМИ АТАКАМИ
 ============================================================ */
-let boss = null; // текущий активный объект босса
+let boss = null;
 let bossActive = false;
 let bossDefeatedThisRun = false;
+let bossTelegraphs = []; // Визуальные предупреждения об атаках
 
 function makeBossObj(id){
   const base = {
@@ -946,31 +940,31 @@ function makeBossObj(id){
   };
   if(id==='ilya'){
     return Object.assign(base, {
-      name:'ИЛЬЯ БОКТЕРИЯ', hp:220, maxHp:220, w:80, h:90,
+      name:'ИЛЬЯ БОКТЕРИЯ', hp:180, maxHp:180, w:80, h:90,
       x:1300, y:0, attackTimer:1.2, minionTimer:5, phase:1,
       quotes:['ИЗВИНИ, НО РАБОТА ЕСТЬ РАБОТА.','Я ТОЖЕ НЕ ХОТЕЛ ЭТОГО БОЯ.','ПОЧЕМУ ВСЕГДА Я ДОЛЖЕН ДРАТЬСЯ?'],
     });
   }
   if(id==='sisters'){
     return Object.assign(base, {
-      name:'КИРА И РЕВА', hp:260, maxHp:260, w:120,h:60,
+      name:'КИРА И РЕВА', hp:200, maxHp:200, w:120,h:60,
       x:1300, y:0,
-      kira:{x:1250,y:0,hp:130,maxHp:130,dead:false,timer:2,alive:true},
-      reva:{x:1380,y:0,hp:130,maxHp:130,dead:false,timer:1,dashTimer:0,alive:true},
+      kira:{x:1250,y:0,hp:100,maxHp:100,dead:false,timer:2,alive:true},
+      reva:{x:1380,y:0,hp:100,maxHp:100,dead:false,timer:1,dashTimer:0,alive:true},
       annoyance:0,
       quotes:['Кира: Она снова целится в тебя, Рева!','Рева: Прости, не рассчитала!','Кира: Опять?! Ты специально?'],
     });
   }
   if(id==='kotomka' || id==='kotomkaFinalPrep'){
     return Object.assign(base, {
-      name:'КОТОМКА', hp:300, maxHp:300, w:100,h:100,
+      name:'КОТОМКА', hp:250, maxHp:250, w:100,h:100,
       x:1400, y:0, ruleTimer:3, gravityFlipped:false, phase:1,
       quotes:['я устала считать разы.','гравитация — это тоже выбор, знаешь ли.','ты опять не помнишь. это нормально.'],
     });
   }
   if(id==='final'){
     return Object.assign(base, {
-      name:'ДЕДЛАЙН (последняя форма)', hp:420, maxHp:420, w:110,h:120,
+      name:'ДЕДЛАЙН (последняя форма)', hp:350, maxHp:350, w:110,h:120,
       x:1650, y:0, phase:1, attackTimer:1, minionTimer:6, ruleTimer:4, gravityFlipped:false,
       quotes:['ВОСПОМИНАНИЕ НЕ МОЖЕТ БЫТЬ ЗАВЕРШЕНО ДОСРОЧНО.','ТИМБУЛ, ТЫ НЕ ДОЛЖЕН БЫЛ ЕЙ ГОВОРИТЬ.','ОЧНИСЬ ПОЗЖЕ. ЕЩЁ НЕ ВРЕМЯ.'],
     });
@@ -985,6 +979,7 @@ function startBoss(zone){
   if(boss.reva) boss.reva.y = zone.groundY-60;
   bossActive = true;
   bossDefeatedThisRun = false;
+  bossTelegraphs = [];
   gameState = 'boss';
   SFX.boss();
   startMusic('boss');
@@ -1013,32 +1008,42 @@ function updateBossIlya(dt, zone){
   boss.attackTimer -= dt; boss.minionTimer -= dt;
   if(boss.hitFlash>0) boss.hitFlash-=dt;
   if(boss.invuln>0) boss.invuln-=dt;
-  if(boss.hp < boss.maxHp*0.6 && boss.phase===1){ boss.phase=2; boss.quoteNow='НАЧАЛО ФАЗЫ 2. ИЗВИНИ, ПРИДЁТСЯ ПОДКЛЮЧИТЬ ДРУЗЕЙ.'; queueBossLine(boss.quoteNow); }
-  if(boss.hp < boss.maxHp*0.25 && boss.phase===2){ boss.phase=3; boss.quoteNow='ЛАДНО, ТЕПЕРЬ ПО-НАСТОЯЩЕМУ ИЗВИНИ.'; queueBossLine(boss.quoteNow); }
-  // движение к игроку
+  if(boss.hp < boss.maxHp*0.6 && boss.phase===1){ boss.phase=2; queueBossLine('НАЧАЛО ФАЗЫ 2. ИЗВИНИ, ПРИДЁТСЯ ПОДКЛЮЧИТЬ ДРУЗЕЙ.'); }
+  if(boss.hp < boss.maxHp*0.25 && boss.phase===2){ boss.phase=3; queueBossLine('ЛАДНО, ТЕПЕРЬ ПО-НАСТОЯЩЕМУ ИЗВИНИ.'); }
+  
   const speed = boss.phase===3? 130:80;
   boss.x += Math.sign(player.x-boss.x)*speed*dt*0.5;
   boss.x = clamp(boss.x, arenaMinX, arenaMaxX);
-  // атака
+  
+  // Атака с визуальным телеграфом
   if(boss.attackTimer<=0){
     boss.attackTimer = boss.phase===3? 0.7 : 1.3;
     const dist = Math.abs(player.x-boss.x);
     if(dist<120){
-      // удар в ближнем бою
-      if(Math.abs(player.y-boss.y) < 100 && player.invuln<=0) damagePlayer(14);
+      // Ближняя атака с предупреждением
+      bossTelegraphs.push({type:'melee', x:boss.x, y:boss.y, timer:0.5, duration:0.5});
+      setTimeout(()=>{
+        if(Math.abs(player.x-boss.x)<120 && Math.abs(player.y-boss.y) < 100 && player.invuln<=0) damagePlayer(10);
+      }, 500);
     } else {
-      projectiles.push(new Projectile(boss.x+boss.w/2, boss.y+30, Math.sign(player.x-boss.x)*260, -30, false));
+      // Дальняя атака с предупреждением
+      bossTelegraphs.push({type:'projectile', x:boss.x+boss.w/2, y:boss.y+30, timer:0.4, duration:0.4, dir:Math.sign(player.x-boss.x)});
+      setTimeout(()=>{
+        projectiles.push(new Projectile(boss.x+boss.w/2, boss.y+30, Math.sign(player.x-boss.x)*260, -30, false));
+      }, 400);
     }
   }
+  
   if(boss.phase>=2 && boss.minionTimer<=0){
     boss.minionTimer = 4.5;
     const m = new Enemy({type:'jumper', x: boss.x+rand(-100,100)});
     m.groundY = zone.def.groundY - m.h; m.y=m.groundY;
     zone.enemyInstances.push(m);
   }
+  
   const pb={x:player.x,y:player.y,w:player.w,h:player.h};
   const bb={x:boss.x,y:boss.y,w:boss.w,h:boss.h};
-  if(rectsOverlap(pb,bb) && player.invuln<=0) damagePlayer(10);
+  if(rectsOverlap(pb,bb) && player.invuln<=0) damagePlayer(8);
   if(boss.dead) finishBoss();
 }
 
@@ -1046,49 +1051,44 @@ function updateBossSisters(dt, zone){
   const arenaMinX=zone.def.exitX-900, arenaMaxX=zone.def.exitX-80;
   if(boss.hitFlash>0) boss.hitFlash-=dt;
   const kira=boss.kira, reva=boss.reva;
+  
   if(kira.alive){
     kira.timer -= dt;
     kira.x = clamp(kira.x + Math.sin(performance.now()/900)*30*dt, arenaMinX, arenaMaxX);
     if(kira.timer<=0){
       kira.timer = 3;
-      // Кира "двигает платформы" - создаём временную опасную зону-иллюзию (просто телеграф урона снизу)
+      // Кира создает визуальную опасную зону
+      bossTelegraphs.push({type:'floor_hazard', x:kira.x-40, y:zone.def.groundY-10, timer:0.8, duration:0.8, w:80});
       queueBossLine(pick(['Кира: Ой, тут пол сейчас пропадёт.','Кира: Держись крепче, милая.']));
-      boss.kiraShiftTimer = 0.6;
-    }
-    if(boss.kiraShiftTimer>0){
-      boss.kiraShiftTimer -= dt;
-      if(boss.kiraShiftTimer<=0){
-        // урон, если игрок стоял слишком близко к Кире, будто пол правда пропал
-        if(Math.abs(player.x-kira.x)<80 && player.onGround) damagePlayer(10);
-      }
     }
     if(kira.invuln>0) kira.invuln-=dt;
     const kb={x:kira.x,y:kira.y,w:50,h:50};
     const pb={x:player.x,y:player.y,w:player.w,h:player.h};
-    if(rectsOverlap(pb,kb) && player.invuln<=0) damagePlayer(6);
+    if(rectsOverlap(pb,kb) && player.invuln<=0) damagePlayer(5);
   }
+  
   if(reva.alive){
     reva.timer -= dt; reva.dashTimer -= dt;
     if(reva.dashTimer>0){
+      // Рева делает рывок с визуальным следом
+      spawnParticles(reva.x+25, reva.y+25, 2, {color:'#ef5350', minVY:-20,maxVY:20,minVX:-20,maxVX:20,grav:0});
       reva.x += Math.sign(player.x-reva.x)*420*dt;
     } else {
       reva.x += Math.sign(player.x-reva.x)*70*dt;
       if(reva.timer<=0){
         reva.timer = 2.6;
         reva.dashTimer = 0.35;
+        bossTelegraphs.push({type:'dash_warning', x:reva.x, y:reva.y, timer:0.3, duration:0.3, dir:Math.sign(player.x-reva.x)});
         SFX.dash();
         queueBossLine(pick(['Рева: С дороги!','Рева: Извини, тормоза барахлят!']));
-        if(boss.annoyance>60){
-          // если аннойанс высокий, Рева может случайно задеть Киру
-          if(Math.abs(reva.x-kira.x)<60 && kira.alive){ damageBoss(kira, 20); boss.annoyance=0; queueBossLine('Кира: РЕВА! Ты в меня попала!'); }
-        }
       }
     }
     if(reva.invuln>0) reva.invuln-=dt;
     const rb={x:reva.x,y:reva.y,w:50,h:50};
     const pb={x:player.x,y:player.y,w:player.w,h:player.h};
-    if(rectsOverlap(pb,rb) && player.invuln<=0){ damagePlayer(9); boss.annoyance+=15; }
+    if(rectsOverlap(pb,rb) && player.invuln<=0){ damagePlayer(7); boss.annoyance+=15; }
   }
+  
   boss.hp = (kira.alive?kira.hp:0)+(reva.alive?reva.hp:0);
   if(!kira.alive && !reva.alive){ boss.dead=true; finishBoss(); }
 }
@@ -1101,25 +1101,34 @@ function updateBossKotomka(dt, zone){
   boss.x += Math.sin(performance.now()/1400)*40*dt;
   boss.x = clamp(boss.x, arenaMinX, arenaMaxX);
   boss.y = zone.def.groundY - boss.h - 40 + Math.sin(performance.now()/700)*20;
+  
   if(boss.ruleTimer<=0){
     boss.ruleTimer = rand(3.5,5);
     const rule = pick(['gravity','shrink','shoot']);
     if(rule==='gravity'){
-      gravityMult = gravityMult>0? -0.7 : 1;
+      // Визуальный эффект смены гравитации
+      bossTelegraphs.push({type:'gravity_shift', x:player.x, y:player.y, timer:0.6, duration:0.6});
       queueBossLine('котомка: гравитация теперь моя.');
       screenShake(8,0.3);
+      setTimeout(()=>{ gravityMult = gravityMult>0? -0.7 : 1; }, 600);
     } else if(rule==='shrink'){
       queueBossLine('котомка: платформы немного... подвинутся.');
       for(const p of zone.platformInstances){ if(p.def.moving) p.phase = Math.random()*10; }
     } else if(rule==='shoot'){
-      for(let i=-1;i<=1;i++) projectiles.push(new Projectile(boss.x+boss.w/2, boss.y+boss.h/2, i*160, -180, false));
+      // Предупреждение о выстрелах
+      bossTelegraphs.push({type:'projectile_burst', x:boss.x+boss.w/2, y:boss.y+boss.h/2, timer:0.5, duration:0.5});
       queueBossLine('котомка: лови.');
+      setTimeout(()=>{
+        for(let i=-1;i<=1;i++) projectiles.push(new Projectile(boss.x+boss.w/2, boss.y+boss.h/2, i*160, -180, false));
+      }, 500);
     }
   }
+  
   if(boss.hp<boss.maxHp*0.4 && !boss.enraged){ boss.enraged=true; gravityMult=1; queueBossLine('котомка: ладно. хватит игр.'); }
+  
   const pb={x:player.x,y:player.y,w:player.w,h:player.h};
   const bb={x:boss.x,y:boss.y,w:boss.w,h:boss.h};
-  if(rectsOverlap(pb,bb) && player.invuln<=0) damagePlayer(12);
+  if(rectsOverlap(pb,bb) && player.invuln<=0) damagePlayer(10);
   if(boss.dead){ gravityMult=1; finishBoss(); }
 }
 
@@ -1130,27 +1139,37 @@ function updateBossFinal(dt, zone){
   if(boss.invuln>0) boss.invuln-=dt;
   if(boss.hp<boss.maxHp*0.66 && boss.phase===1){ boss.phase=2; queueBossLine('ТИМБУЛ, ЗАЧЕМ ТЫ ЕЙ ВСЁ РАССКАЗАЛ?!'); }
   if(boss.hp<boss.maxHp*0.33 && boss.phase===2){ boss.phase=3; queueBossLine('ХОРОШО. ХОРОШО. ПОСЛЕДНЯЯ ПОПЫТКА.'); }
+  
   boss.x += Math.sign(player.x-boss.x)*(boss.phase*35)*dt;
   boss.x = clamp(boss.x, arenaMinX, arenaMaxX);
   boss.y = zone.def.groundY - boss.h + Math.sin(performance.now()/600)*10;
+  
   if(boss.attackTimer<=0){
     boss.attackTimer = 1.0 - boss.phase*0.15;
-    projectiles.push(new Projectile(boss.x+boss.w/2, boss.y+40, Math.sign(player.x-boss.x)*240, -60,false));
+    // Предупреждение о снарядах
+    bossTelegraphs.push({type:'projectile', x:boss.x+boss.w/2, y:boss.y+40, timer:0.4, duration:0.4, dir:Math.sign(player.x-boss.x)});
+    setTimeout(()=>{
+      projectiles.push(new Projectile(boss.x+boss.w/2, boss.y+40, Math.sign(player.x-boss.x)*240, -60,false));
+    }, 400);
   }
+  
   if(boss.phase>=2 && boss.minionTimer<=0){
     boss.minionTimer=4;
     const m = new Enemy({type: pick(['walker','jumper']), x: boss.x+rand(-150,150)});
     m.groundY = zone.def.groundY-m.h; m.y=m.groundY;
     zone.enemyInstances.push(m);
   }
+  
   if(boss.phase>=3 && boss.ruleTimer<=0){
     boss.ruleTimer=4;
-    gravityMult = gravityMult>0? -0.7:1;
+    bossTelegraphs.push({type:'gravity_shift', x:player.x, y:player.y, timer:0.6, duration:0.6});
     queueBossLine('ТИМБУЛ: держись, Рэмилия. Уже недолго.');
+    setTimeout(()=>{ gravityMult = gravityMult>0? -0.7:1; }, 600);
   }
+  
   const pb={x:player.x,y:player.y,w:player.w,h:player.h};
   const bb={x:boss.x,y:boss.y,w:boss.w,h:boss.h};
-  if(rectsOverlap(pb,bb) && player.invuln<=0) damagePlayer(15);
+  if(rectsOverlap(pb,bb) && player.invuln<=0) damagePlayer(12);
   if(boss.dead){ gravityMult=1; finishBoss(true); }
 }
 
@@ -1172,7 +1191,6 @@ function finishBoss(isFinal){
   } else {
     persistSave();
     projectiles = projectiles.filter(p=>true);
-    // после победы над боссом сразу открываем выход
   }
 }
 
@@ -1227,6 +1245,37 @@ function updateBoss(dt, zone){
   else if(boss.id==='sisters') updateBossSisters(dt, zone);
   else if(boss.id==='kotomka' || boss.id==='kotomkaFinalPrep') updateBossKotomka(dt, zone);
   else if(boss.id==='final') updateBossFinal(dt, zone);
+  
+  // Обновление визуальных телеграфов
+  for(let i=bossTelegraphs.length-1;i>=0;i--){
+    const t = bossTelegraphs[i];
+    t.timer -= dt;
+    if(t.timer <= 0) bossTelegraphs.splice(i,1);
+  }
+}
+
+function drawBossTelegraphs(){
+  for(const t of bossTelegraphs){
+    ctx.save();
+    ctx.globalAlpha = 0.4 + 0.3*Math.sin(performance.now()/100);
+    if(t.type==='melee'){
+      ctx.fillStyle = '#ff0000';
+      ctx.fillRect(t.x-camera.x-20, t.y-camera.y-20, 120, 80);
+    } else if(t.type==='projectile' || t.type==='projectile_burst'){
+      ctx.fillStyle = '#ff9900';
+      ctx.beginPath(); ctx.arc(t.x-camera.x, t.y-camera.y, 20, 0, Math.PI*2); ctx.fill();
+    } else if(t.type==='floor_hazard'){
+      ctx.fillStyle = '#ff0000';
+      ctx.fillRect(t.x-camera.x-20, t.y-camera.y, t.w+40, 20);
+    } else if(t.type==='dash_warning'){
+      ctx.fillStyle = '#ff8800';
+      ctx.fillRect(t.x-camera.x-10, t.y-camera.y-10, 70, 70);
+    } else if(t.type==='gravity_shift'){
+      ctx.fillStyle = '#00ffff';
+      ctx.beginPath(); ctx.arc(t.x-camera.x, t.y-camera.y, 30, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  }
 }
 
 /* ============================================================
@@ -1267,35 +1316,35 @@ dlgBox.addEventListener('touchstart', e=>{ e.preventDefault(); advanceDialogue()
    МЕМНАЯ КНОПКА
 ============================================================ */
 const MEME_EFFECTS = [
-  ()=>{ // крик
+  ()=>{
     floatMessage('РЭМИЛИЯ ОРЁТ ВО ВСЮ ГЛОТКУ', player.x-camera.x-30, player.y-camera.y-40);
     beep(150,0.5,'sawtooth',0.25,900); screenShake(8,0.3); vibrate(80);
   },
-  ()=>{ // Тимбул на секунду
+  ()=>{
     floatMessage('...появляется Тимбул. И сразу исчезает.', VW/2-100, 100);
     spawnParticles(player.x+50, player.y-20, 12, {color:'#c9a7ff'});
   },
-  ()=>{ // предмет улетает
+  ()=>{
     floatMessage('какой-то предмет улетает в закат', player.x-camera.x, player.y-camera.y-60);
     spawnParticles(player.x, player.y, 8, {color:'#ffd166', minVY:-400, maxVY:-300});
   },
-  ()=>{ // музыка резко меняется
+  ()=>{
     floatMessage('музыка внезапно меняется!', VW/2-90, 120);
     const keys = Object.keys(MUSIC_PATTERNS);
     startMusic(pick(keys));
   },
-  ()=>{ // экран трясётся
+  ()=>{
     floatMessage('экран слегка трясётся от возмущения', VW/2-110, 140);
     screenShake(14,0.5);
   },
-  ()=>{ // редкая пасхалка про Илью Боктерию
+  ()=>{
     floatMessage('Илья Боктерия (издалека): Я ТОЖЕ ЭТО СЛЫШАЛ!', VW/2-140, 60);
   },
-  ()=>{ // ярость мгновенно
+  ()=>{
     addRage(30);
     floatMessage('ярость Рэмилии подскочила!', player.x-camera.x-20, player.y-camera.y-40);
   },
-  ()=>{ // Котомка комментирует
+  ()=>{
     floatMessage('Котомка (шёпотом): не нажимай эту кнопку так часто.', VW/2-150, 90);
   },
 ];
@@ -1311,8 +1360,8 @@ function triggerMeme(){
    СБОР УРОВНЯ
 ============================================================ */
 let currentZoneIndex = 0;
-let zoneState = null; // {platformInstances, enemyInstances, collectibleInstances, checkpointX, ...}
-let gameState = 'menu'; // menu, settings, playing, dialogue, boss, paused, gameover, victory
+let zoneState = null;
+let gameState = 'menu';
 let lastRespawnX = 60, lastRespawnY = 400;
 
 function buildZone(idx){
@@ -1332,6 +1381,7 @@ function buildZone(idx){
   };
   projectiles = [];
   boss=null; bossActive=false;
+  bossTelegraphs = [];
   gravityMult=1;
   player.x = 60; player.y = def.groundY-60; player.vx=0; player.vy=0;
   lastRespawnX=60; lastRespawnY=def.groundY-60;
@@ -1408,7 +1458,7 @@ function updatePlayer(dt, zone){
   // границы уровня
   player.x = clamp(player.x, 0, zone.def.width-player.w);
 
-  // столкновения с платформами (только сверху, простая модель)
+  // столкновения с платформами
   player.onGround=false;
   for(const p of zone.platformInstances){
     const pb={x:p.x,y:p.y,w:p.w,h:p.h};
@@ -1420,7 +1470,6 @@ function updatePlayer(dt, zone){
   // земля по умолчанию
   const groundPlane = {x:0,y:zone.def.groundY,w:zone.def.width,h:200};
   if(player.y+player.h >= groundPlane.y && player.vy>=0){
-    // проверяем, не над ямой ли (pit)
     let overPit=false;
     for(const hz of zone.def.hazards){
       if(hz.type==='pit' && player.x+player.w/2 > hz.x && player.x+player.w/2 < hz.x+hz.w) overPit=true;
@@ -1428,8 +1477,7 @@ function updatePlayer(dt, zone){
     if(!overPit){ player.y = groundPlane.y-player.h; player.vy=0; player.onGround=true; }
   }
   if(player.y > zone.def.groundY+300){
-    // упал в пропасть
-    damagePlayer(25);
+    damagePlayer(20);
     player.x = lastRespawnX; player.y = lastRespawnY; player.vy=0;
   }
 
@@ -1438,7 +1486,7 @@ function updatePlayer(dt, zone){
     if(hz.type==='spike'){
       const hb={x:hz.x,y:hz.y,w:hz.w,h:hz.h};
       const pb={x:player.x+6,y:player.y+6,w:player.w-12,h:player.h-12};
-      if(rectsOverlap(pb,hb)){ damagePlayer(15); }
+      if(rectsOverlap(pb,hb)){ damagePlayer(10); }
     }
   }
 
@@ -1457,16 +1505,17 @@ function updatePlayer(dt, zone){
     }
   }
 
-  // атака по врагам
+  // атака по врагам (усиленная)
   if(player.attackTimer>0.15 && !player.attackHitDone){
-    const range = 34;
+    const range = 40;
     const atkBox = {x: player.facing>0? player.x+player.w : player.x-range, y:player.y+4, w:range, h:player.h-8};
     let hitSomething=false;
     for(const e of zone.enemyInstances){
       if(e.dead) continue;
       if(rectsOverlap(atkBox, {x:e.x,y:e.y,w:e.w,h:e.h})){
-        const dmg = player.rage>70? 40: 20;
+        const dmg = player.rage>70? ATTACK_DAMAGE*1.5 : ATTACK_DAMAGE;
         e.hp -= dmg; e.hitFlash=0.15; hitSomething=true;
+        spawnParticles(e.x+e.w/2, e.y+e.h/2, 8, {color:'#ff9fd0'});
         if(e.hp<=0){ e.dead=true; spawnParticles(e.x+e.w/2,e.y+e.h/2,14,{color:'#8bc34a'}); }
       }
     }
@@ -1480,8 +1529,9 @@ function updatePlayer(dt, zone){
       }
       for(const t of targets){
         if(rectsOverlap(atkBox, t.box)){
-          const dmg = player.rage>70? 26:14;
+          const dmg = player.rage>70? ATTACK_DAMAGE*1.2 : ATTACK_DAMAGE;
           damageBoss(t.obj, dmg); hitSomething=true;
+          spawnParticles(t.box.x+t.box.w/2, t.box.y+t.box.h/2, 6, {color:'#ffdf7a'});
           if(t.obj.hp<=0){ t.obj.dead=true; if(t.obj.alive!==undefined) t.obj.alive=false; }
         }
       }
@@ -1491,7 +1541,7 @@ function updatePlayer(dt, zone){
   }
   zone.enemyInstances = zone.enemyInstances.filter(e=>!e.dead);
 
-  // ярость: рост от долгого стояния
+  // ярость
   if(idle && player.onGround){
     player.idleTimer += dt;
     if(player.idleTimer>4){ addRage(6*dt); }
@@ -1507,7 +1557,7 @@ function updatePlayer(dt, zone){
   }
   player.animT += dt;
 
-  // проверка диалогов по позиции
+  // проверка диалогов
   for(let i=zone.dialoguesRemaining.length-1;i>=0;i--){
     const d = zone.dialoguesRemaining[i];
     if(player.x >= d.x){
@@ -1531,14 +1581,9 @@ function updatePlayer(dt, zone){
   }
 
   // конец уровня
-  if(!bossActive && zone.bossTriggered!==false ? false : false){}
-  if(!bossActive && bossDefeatedThisRunOrNoBoss(zone) && player.x >= zone.def.exitX){
+  if(!bossActive && zone.bossTriggered && player.x >= zone.def.exitX){
     goToNextZone();
   }
-}
-function bossDefeatedThisRunOrNoBoss(zone){
-  if(!zone.def.boss) return true;
-  return zone.bossTriggered && !bossActive;
 }
 
 function goToNextZone(){
@@ -1554,7 +1599,7 @@ function goToNextZone(){
 }
 
 /* ============================================================
-   ОТРИСОВКА ФОНА (по стилю зоны)
+   ОТРИСОВКА
 ============================================================ */
 function drawBackground(zone){
   const g = ctx.createLinearGradient(0,0,0,VH);
@@ -1603,9 +1648,6 @@ function drawBackground(zone){
   ctx.globalAlpha=1;
 }
 
-/* ============================================================
-   ОТРИСОВКА ИГРОКА (процедурно)
-============================================================ */
 function drawPlayer(){
   const sx = player.x-camera.x, sy=player.y-camera.y;
   ctx.save();
@@ -1649,9 +1691,9 @@ function drawPlayer(){
 
   // лицо злое
   ctx.fillStyle='#2a0018';
-  ctx.fillRect(2, bob-10, 4,4); // глаз
+  ctx.fillRect(2, bob-10, 4,4);
   ctx.save();
-  ctx.translate(2,bob-13); ctx.rotate(0.4); ctx.fillRect(-3,-1,7,2); ctx.restore(); // бровь злая
+  ctx.translate(2,bob-13); ctx.rotate(0.4); ctx.fillRect(-3,-1,7,2); ctx.restore();
   if(player.state==='victory'){
     ctx.beginPath(); ctx.arc(6, bob-2, 5,0,Math.PI); ctx.stroke();
   } else if(player.hp < player.maxHp*0.3){
@@ -1670,39 +1712,6 @@ function drawPlayer(){
   ctx.restore();
 }
 
-/* ============================================================
-   ОТРИСОВКА ТИМБУЛА (случайные камео)
-============================================================ */
-let timbulCameo = null; // {x,y,timer}
-let timbulSpawnTimer = rand(6,14);
-function updateTimbulCameo(dt, zone){
-  if(gameState!=='playing') return;
-  timbulSpawnTimer -= dt;
-  if(!timbulCameo && timbulSpawnTimer<=0){
-    timbulSpawnTimer = rand(10,20);
-    timbulCameo = {x: player.x+rand(-40,220), y: zone.def.groundY-140-rand(0,60), timer: rand(1.6,2.6)};
-  }
-  if(timbulCameo){
-    timbulCameo.timer -= dt;
-    if(timbulCameo.timer<=0) timbulCameo=null;
-  }
-}
-function drawTimbulCameo(){
-  if(!timbulCameo) return;
-  const sx=timbulCameo.x-camera.x, sy=timbulCameo.y-camera.y;
-  ctx.save();
-  ctx.globalAlpha = clamp(timbulCameo.timer,0,1);
-  ctx.fillStyle='#c9a7ff';
-  ctx.beginPath(); ctx.ellipse(sx,sy,16,20,0,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle='#2a0018';
-  ctx.fillRect(sx-6,sy-6,3,3); ctx.fillRect(sx+3,sy-6,3,3);
-  ctx.strokeStyle='#7a4dbf'; ctx.lineWidth=2; ctx.stroke();
-  ctx.restore();
-}
-
-/* ============================================================
-   ОТРИСОВКА УРОВНЯ
-============================================================ */
 function drawZone(zone){
   drawBackground(zone);
 
@@ -1711,7 +1720,7 @@ function drawZone(zone){
   ctx.fillRect(0-camera.x, zone.def.groundY-camera.y, zone.def.width, 200);
   ctx.fillStyle='#5a4326';
   ctx.fillRect(0-camera.x, zone.def.groundY-camera.y, zone.def.width, 8);
-  // ямы - вырезаем визуально тёмным
+  // ямы
   for(const hz of zone.def.hazards){
     if(hz.type==='pit'){
       ctx.fillStyle = zone.def.bgBottom;
@@ -1758,7 +1767,7 @@ function drawZone(zone){
   drawTimbulCameo();
   drawPlayer();
   drawParticles();
-
+  drawBossTelegraphs(); // Визуальные предупреждения
   if(bossActive) drawBoss();
 }
 function drawProjectile(p){
@@ -1771,12 +1780,40 @@ function updateProjectiles(dt, zone){
     p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=400*dt; p.life-=dt;
     const pb={x:player.x,y:player.y,w:player.w,h:player.h};
     if(!p.friendly && rectsOverlap(pb,{x:p.x-5,y:p.y-5,w:10,h:10}) && player.invuln<=0){
-      damagePlayer(10); projectiles.splice(i,1); continue;
+      damagePlayer(8); projectiles.splice(i,1); continue;
     }
     if(p.life<=0 || p.x<camera.x-100 || p.x>camera.x+VW+100 || p.y>zone.def.groundY+250){
       projectiles.splice(i,1);
     }
   }
+}
+
+// Тимбул камео
+let timbulCameo = null;
+let timbulSpawnTimer = rand(6,14);
+function updateTimbulCameo(dt, zone){
+  if(gameState!=='playing') return;
+  timbulSpawnTimer -= dt;
+  if(!timbulCameo && timbulSpawnTimer<=0){
+    timbulSpawnTimer = rand(10,20);
+    timbulCameo = {x: player.x+rand(-40,220), y: zone.def.groundY-140-rand(0,60), timer: rand(1.6,2.6)};
+  }
+  if(timbulCameo){
+    timbulCameo.timer -= dt;
+    if(timbulCameo.timer<=0) timbulCameo=null;
+  }
+}
+function drawTimbulCameo(){
+  if(!timbulCameo) return;
+  const sx=timbulCameo.x-camera.x, sy=timbulCameo.y-camera.y;
+  ctx.save();
+  ctx.globalAlpha = clamp(timbulCameo.timer,0,1);
+  ctx.fillStyle='#c9a7ff';
+  ctx.beginPath(); ctx.ellipse(sx,sy,16,20,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#2a0018';
+  ctx.fillRect(sx-6,sy-6,3,3); ctx.fillRect(sx+3,sy-6,3,3);
+  ctx.strokeStyle='#7a4dbf'; ctx.lineWidth=2; ctx.stroke();
+  ctx.restore();
 }
 
 /* ============================================================
@@ -1849,7 +1886,6 @@ document.getElementById('btnNewGame').addEventListener('click', ()=>{
   currentZoneIndex=0;
   buildZone(0);
   gameState='playing';
-  showScreen('screenMain'); // скрываем оверлей
   document.getElementById('screenMain').classList.remove('active');
   setPlayingUIVisible(true);
 });
@@ -1933,7 +1969,6 @@ document.getElementById('btnVictoryMenu').addEventListener('click', ()=>{
   gameState='menu'; setPlayingUIVisible(false); showScreen('screenMain');
 });
 
-// первый клик — разблокировать аудио (требование браузеров)
 window.addEventListener('click', ensureAudio, {once:true});
 window.addEventListener('touchstart', ensureAudio, {once:true});
 
