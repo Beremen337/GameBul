@@ -1,2690 +1,1942 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Рэмилия и Тимбул: Смакоградский Переполох</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-touch-callout: none;
-            touch-action: none;
-            overscroll-behavior: none;
-        }
-        html, body {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background: #0a0a1a;
-            font-family: 'Arial', sans-serif;
-            position: fixed;
-            top: 0;
-            left: 0;
-            touch-action: none;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-            -webkit-text-size-adjust: 100%;
-            -webkit-tap-highlight-color: transparent;
-        }
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
-            image-rendering: -moz-crisp-edges;
-            image-rendering: -webkit-crisp-edges;
-            -ms-interpolation-mode: nearest-neighbor;
-            image-rendering: pixelated;
-            position: relative;
-            z-index: 1;
-        }
-        #game-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            background: #0a0a1a;
-            z-index: 0;
-        }
-        #ui-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-        .touch-control {
-            pointer-events: auto;
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.15);
-            border: 2px solid rgba(255,255,255,0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: rgba(255,255,255,0.7);
-            transition: background 0.1s, transform 0.1s;
-            touch-action: none;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-            font-size: 14px;
-            z-index: 20;
-        }
-        .touch-control:active {
-            background: rgba(255,255,255,0.35);
-            transform: scale(0.92);
-        }
-        #joystick-zone {
-            pointer-events: auto;
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.1);
-            border: 2px solid rgba(255,255,255,0.3);
-            touch-action: none;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-            z-index: 20;
-            left: 20px;
-            bottom: 30px;
-            width: 110px;
-            height: 110px;
-        }
-        #joystick-knob {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.4);
-            width: 44px;
-            height: 44px;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            touch-action: none;
-            border: 2px solid rgba(255,255,255,0.6);
-        }
-        #btn-jump, #btn-attack, #btn-dash, #btn-meme {
-            position: absolute;
-            pointer-events: auto;
-            touch-action: none;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.15);
-            border: 2px solid rgba(255,255,255,0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: rgba(255,255,255,0.8);
-            z-index: 20;
-            transition: background 0.1s, transform 0.1s;
-            font-size: 14px;
-            touch-action: none;
-        }
-        #btn-jump:active, #btn-attack:active, #btn-dash:active, #btn-meme:active {
-            background: rgba(255,255,255,0.35);
-            transform: scale(0.9);
-        }
-        #btn-jump { right: 25px; bottom: 175px; width: 65px; height: 65px; }
-        #btn-attack { right: 15px; bottom: 260px; width: 70px; height: 70px; }
-        #btn-dash { right: 30px; bottom: 85px; width: 60px; height: 60px; }
-        #btn-meme { left: 155px; bottom: 30px; width: 65px; height: 65px; background: rgba(255,100,150,0.2); border-color: rgba(255,100,150,0.6); }
-        .touch-label {
-            font-size: 11px;
-            pointer-events: none;
-            text-align: center;
-            line-height: 1.1;
-            color: rgba(255,255,255,0.6);
-            position: absolute;
-            bottom: -20px;
-            width: 100%;
-        }
-        @media (min-width: 900px) {
-            #joystick-zone, #btn-jump, #btn-attack, #btn-dash, #btn-meme {
-                display: none;
-            }
-        }
-        @media (max-width: 899px) and (orientation: landscape) {
-            #joystick-zone, #btn-jump, #btn-attack, #btn-dash, #btn-meme {
-                display: flex;
-            }
-        }
-        @media (max-width: 500px) {
-            #joystick-zone { left: 12px; bottom: 20px; width: 85px; height: 85px; }
-            #joystick-knob { width: 38px; height: 38px; }
-            #btn-jump { right: 18px; bottom: 145px; width: 55px; height: 55px; }
-            #btn-attack { right: 10px; bottom: 210px; width: 60px; height: 60px; }
-            #btn-dash { right: 22px; bottom: 70px; width: 50px; height: 50px; }
-            #btn-meme { left: 115px; bottom: 22px; width: 55px; height: 55px; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>РЭМИЛИЯ ПРОТИВ ВСЕЛЕННОЙ</title>
+<style>
+  html,body{
+    margin:0;padding:0;overflow:hidden;position:fixed;inset:0;
+    width:100%;height:100%;
+    background:#0b0210;
+    touch-action:none;
+    -webkit-user-select:none;user-select:none;
+    -webkit-touch-callout:none;
+    font-family:Verdana, Arial, sans-serif;
+  }
+  #stage{
+    position:fixed;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    background:#0b0210;
+  }
+  #gameCanvas{
+    background:#111;
+    image-rendering:pixelated;
+    touch-action:none;
+  }
+  #ui{
+    position:absolute;inset:0;pointer-events:none;
+    display:flex;flex-direction:column;
+  }
+  .screen{
+    position:absolute;inset:0;
+    display:none;
+    flex-direction:column;align-items:center;justify-content:center;
+    background:rgba(10,4,16,0.92);
+    color:#ffe1f0;pointer-events:all;
+    padding:20px;box-sizing:border-box;
+    text-align:center;
+  }
+  .screen.active{display:flex;}
+  .title{
+    font-size:8vw;font-weight:bold;color:#ff5fa2;
+    text-shadow:3px 3px 0 #7a0043, 0 0 20px #ff2f8f;
+    margin-bottom:6vh;letter-spacing:1px;
+  }
+  .subtitle{font-size:3.6vw;color:#ffd0e6;margin-bottom:4vh;max-width:90%;}
+  button.menuBtn{
+    font-size:5vw;
+    background:linear-gradient(#ff7fc0,#d1408f);
+    border:3px solid #7a0043;
+    color:#fff;border-radius:16px;
+    padding:2.5vh 8vw;margin:1.2vh;
+    box-shadow:0 5px 0 #7a0043;
+    font-weight:bold;
+    pointer-events:all;
+  }
+  button.menuBtn:active{transform:translateY(4px);box-shadow:0 1px 0 #7a0043;}
+  .rowset{display:flex;flex-direction:column;align-items:center;}
+  .settingRow{
+    display:flex;align-items:center;justify-content:space-between;
+    width:80%;max-width:400px;font-size:4vw;margin:1.5vh 0;background:rgba(255,255,255,0.07);
+    border-radius:10px;padding:1.2vh 3vw;
+  }
+  .toggle{
+    width:60px;height:32px;border-radius:16px;background:#555;position:relative;cursor:pointer;
+  }
+  .toggle.on{background:#ff5fa2;}
+  .toggle .knob{
+    width:26px;height:26px;border-radius:50%;background:#fff;position:absolute;top:3px;left:3px;
+    transition:left .15s;
+  }
+  .toggle.on .knob{left:31px;}
+
+  #hud{
+    position:absolute;top:0;left:0;right:0;
+    padding:8px 10px;box-sizing:border-box;
+    display:flex;flex-direction:column;gap:4px;
+    pointer-events:none;
+    padding-top:calc(8px + env(safe-area-inset-top));
+  }
+  .barWrap{
+    width:46%;height:16px;border:2px solid #3a0022;border-radius:8px;background:#2a0018;overflow:hidden;
+  }
+  #healthBar{height:100%;background:linear-gradient(#ff5f7a,#c1002f);width:100%;transition:width .15s;}
+  #rageBar{height:100%;background:linear-gradient(#ffe15f,#ff7f00);width:0%;transition:width .15s;}
+  .barLabel{font-size:10px;color:#ffe1f0;font-weight:bold;text-shadow:1px 1px 0 #000;}
+  #zoneLabel{
+    position:absolute;top:8px;right:10px;color:#ffd0e6;font-size:12px;font-weight:bold;
+    text-shadow:1px 1px 0 #000;padding-top:env(safe-area-inset-top);
+  }
+  #dialogueBox{
+    position:absolute;left:5%;right:5%;bottom:16%;
+    background:rgba(20,5,20,0.92);border:3px solid #ff5fa2;border-radius:14px;
+    padding:14px 16px;color:#fff;font-size:15px;line-height:1.4;
+    pointer-events:all;display:none;
+  }
+  #dialogueBox .speaker{color:#ff9fd0;font-weight:bold;margin-bottom:4px;display:block;}
+  #dialogueBox .tapHint{display:block;text-align:right;font-size:11px;color:#aaa;margin-top:6px;}
+
+  #controls{
+    position:absolute;inset:0;pointer-events:none;
+  }
+  #joyZone{
+    position:absolute;left:0;bottom:0;width:45%;height:55%;pointer-events:all;
+  }
+  #joyBase{
+    position:absolute;width:110px;height:110px;border-radius:50%;
+    background:rgba(255,255,255,0.12);border:3px solid rgba(255,255,255,0.3);
+    display:none;
+  }
+  #joyStick{
+    position:absolute;width:50px;height:50px;border-radius:50%;
+    background:rgba(255,95,162,0.85);border:2px solid #fff;
+    display:none;
+  }
+  #rightControls{
+    position:absolute;right:3%;bottom:6%;pointer-events:all;
+    display:flex;flex-direction:row-reverse;align-items:flex-end;gap:10px;
+  }
+  .actBtn{
+    width:78px;height:78px;border-radius:50%;
+    background:rgba(255,95,162,0.35);border:3px solid rgba(255,255,255,0.6);
+    color:#fff;font-weight:bold;font-size:13px;
+    display:flex;align-items:center;justify-content:center;
+    pointer-events:all;
+  }
+  .actBtn:active{background:rgba(255,95,162,0.7);}
+  #jumpBtn{margin-bottom:40px;}
+  #memoBtnWrap{
+    position:absolute;left:50%;bottom:4%;transform:translateX(-50%);
+    pointer-events:all;
+  }
+  #memeBtn{
+    width:90px;height:90px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #fff2a8, #ff7f00 70%, #7a3d00);
+    border:4px solid #fff;color:#3a1a00;font-weight:bold;font-size:12px;
+    display:flex;align-items:center;justify-content:center;text-align:center;
+    box-shadow:0 0 18px rgba(255,150,0,0.8);
+  }
+  #memeBtn.cooldown{filter:grayscale(1) brightness(0.6);}
+  #memeCd{
+    position:absolute;top:-18px;left:0;right:0;text-align:center;font-size:11px;color:#ffcf7a;
+  }
+  #pauseBtn{
+    position:absolute;top:calc(10px + env(safe-area-inset-top));left:10px;
+    width:38px;height:38px;border-radius:8px;background:rgba(255,255,255,0.15);
+    border:2px solid rgba(255,255,255,0.4);color:#fff;font-size:16px;
+    pointer-events:all;
+  }
+  #floatText{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+  .floatMsg{
+    position:absolute;color:#fff;font-weight:bold;font-size:13px;text-shadow:1px 1px 0 #000;
+    animation:floatUp 1.6s ease-out forwards;white-space:nowrap;
+  }
+  @keyframes floatUp{
+    0%{opacity:1;transform:translateY(0);}
+    100%{opacity:0;transform:translateY(-60px);}
+  }
+</style>
 </head>
 <body>
-<div id="game-container">
-    <canvas id="gameCanvas"></canvas>
-    <div id="joystick-zone"><div id="joystick-knob"></div></div>
-    <div id="btn-jump" class="touch-control">JUMP</div>
-    <div id="btn-attack" class="touch-control">ATK</div>
-    <div id="btn-dash" class="touch-control">DASH</div>
-    <div id="btn-meme" class="touch-control">MEME</div>
+<div id="stage">
+  <canvas id="gameCanvas" width="400" height="711"></canvas>
+  <div id="ui">
+
+    <div id="hud" style="display:none">
+      <div class="barLabel">ЗДОРОВЬЕ</div>
+      <div class="barWrap"><div id="healthBar"></div></div>
+      <div class="barLabel">ЯРОСТЬ РЭМИЛИИ</div>
+      <div class="barWrap"><div id="rageBar"></div></div>
+    </div>
+    <div id="zoneLabel" style="display:none"></div>
+    <button id="pauseBtn" style="display:none">II</button>
+
+    <div id="dialogueBox">
+      <span class="speaker" id="dlgSpeaker">???</span>
+      <span id="dlgText"></span>
+      <span class="tapHint">нажми, чтобы продолжить ▶</span>
+    </div>
+
+    <div id="floatText"></div>
+
+    <div id="controls" style="display:none">
+      <div id="joyZone"></div>
+      <div id="joyBase"></div>
+      <div id="joyStick"></div>
+      <div id="rightControls">
+        <div class="actBtn" id="attackBtn">УДАР</div>
+        <div class="actBtn" id="dashBtn">РЫВОК</div>
+        <div class="actBtn" id="jumpBtn">ПРЫГ</div>
+      </div>
+      <div id="memoBtnWrap">
+        <div id="memeCd"></div>
+        <div id="memeBtn">МЕМ<br>КНОПКА</div>
+      </div>
+    </div>
+
+    <div class="screen active" id="screenMain">
+      <div class="title">РЭМИЛИЯ<br>ПРОТИВ ТИМБУЛА</div>
+      <div class="subtitle">эпично-мемный 2D платформер про толстую злую тян и абсолютный пиздец вокруг неё</div>
+      <div class="rowset">
+        <button class="menuBtn" id="btnNewGame">НОВАЯ ИГРА</button>
+        <button class="menuBtn" id="btnContinue">ПРОДОЛЖИТЬ</button>
+        <button class="menuBtn" id="btnSettings">НАСТРОЙКИ</button>
+      </div>
+    </div>
+
+    <div class="screen" id="screenSettings">
+      <div class="title" style="font-size:6vw;">НАСТРОЙКИ</div>
+      <div class="settingRow"><span>Музыка</span><div class="toggle on" id="toggleMusic"><div class="knob"></div></div></div>
+      <div class="settingRow"><span>Звуки</span><div class="toggle on" id="toggleSfx"><div class="knob"></div></div></div>
+      <div class="settingRow"><span>Вибрация</span><div class="toggle on" id="toggleVibe"><div class="knob"></div></div></div>
+      <button class="menuBtn" id="btnSettingsBack">НАЗАД</button>
+    </div>
+
+    <div class="screen" id="screenPause">
+      <div class="title" style="font-size:6vw;">ПАУЗА</div>
+      <div class="rowset">
+        <button class="menuBtn" id="btnResume">ПРОДОЛЖИТЬ</button>
+        <button class="menuBtn" id="btnRestartZone">НАЧАТЬ ЗАНОВО</button>
+        <button class="menuBtn" id="btnExitMenu">В ГЛАВНОЕ МЕНЮ</button>
+      </div>
+    </div>
+
+    <div class="screen" id="screenGameOver">
+      <div class="title" style="color:#ff2f2f;">РЭМИЛИЯ УМЕРЛА<br>(ОПЯТЬ)</div>
+      <div class="subtitle" id="gameOverText">"Это даже не больно. Это оскорбительно." — Рэмилия</div>
+      <button class="menuBtn" id="btnRetry">ПОПРОБОВАТЬ СНОВА</button>
+      <button class="menuBtn" id="btnGoMenu">В МЕНЮ</button>
+    </div>
+
+    <div class="screen" id="screenVictory">
+      <div class="title" style="font-size:6vw;">КОНЕЦ.<br>ИЛИ НАЧАЛО?</div>
+      <div class="subtitle" id="victoryText" style="max-width:92%;"></div>
+      <button class="menuBtn" id="btnVictoryMenu">В ГЛАВНОЕ МЕНЮ</button>
+    </div>
+
+  </div>
 </div>
+
 <script>
-(() => {
-    'use strict';
+(function(){
+"use strict";
 
-    // ==================== CANVAS SETUP ====================
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const container = document.getElementById('game-container');
+/* ============================================================
+   БАЗОВАЯ НАСТРОЙКА
+============================================================ */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const VW = 400, VH = 711; // логическое разрешение 9:16
+canvas.width = VW; canvas.height = VH;
 
-    const DESIGN_WIDTH = 400;
-    const DESIGN_HEIGHT = 711;
-    const GRAVITY = 0.55;
-    const MAX_FALL = 12;
-    const PLAYER_SPEED = 2.6;
-    const DASH_SPEED = 7.5;
-    const JUMP_FORCE = -9.2;
-    const ATTACK_DURATION = 18;
-    const ATTACK_RANGE = 45;
-    const ATTACK_DAMAGE = 1;
+function fitCanvas(){
+  const availW = window.innerWidth;
+  const availH = window.innerHeight;
+  const scale = Math.min(availW/VW, availH/VH);
+  canvas.style.width = (VW*scale)+'px';
+  canvas.style.height = (VH*scale)+'px';
+}
+window.addEventListener('resize', fitCanvas);
+window.addEventListener('orientationchange', fitCanvas);
+fitCanvas();
 
-    let canvasWidth = DESIGN_WIDTH;
-    let canvasHeight = DESIGN_HEIGHT;
-    let scaleX = 1;
-    let scaleY = 1;
-    let viewportWidth = window.innerWidth;
-    let viewportHeight = window.innerHeight;
+document.addEventListener('touchmove', e=>{ if(e.target===canvas || e.target.closest('#controls')) e.preventDefault(); }, {passive:false});
+document.addEventListener('gesturestart', e=>e.preventDefault());
 
-    function resizeCanvas() {
-        viewportWidth = window.innerWidth;
-        viewportHeight = window.innerHeight;
-        const aspectRatio = DESIGN_WIDTH / DESIGN_HEIGHT;
-        let drawWidth = viewportWidth;
-        let drawHeight = drawWidth / aspectRatio;
-        if (drawHeight > viewportHeight) {
-            drawHeight = viewportHeight;
-            drawWidth = drawHeight * aspectRatio;
-        }
-        canvasWidth = Math.round(drawWidth);
-        canvasHeight = Math.round(drawHeight);
-        canvas.width = DESIGN_WIDTH;
-        canvas.height = DESIGN_HEIGHT;
-        canvas.style.width = canvasWidth + 'px';
-        canvas.style.height = canvasHeight + 'px';
-        scaleX = canvasWidth / DESIGN_WIDTH;
-        scaleY = canvasHeight / DESIGN_HEIGHT;
+/* ============================================================
+   СОХРАНЕНИЕ
+============================================================ */
+const SAVE_KEY = 'remilia_save_v1';
+function defaultSave(){
+  return {
+    settings:{music:true, sfx:true, vibe:true},
+    progress:{zoneIndex:0, bossesDefeated:[], secretsFound:[], seenDialogues:[], hasSave:false, storyFlag:0}
+  };
+}
+let SAVE = loadSave();
+function loadSave(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return defaultSave();
+    const parsed = JSON.parse(raw);
+    return Object.assign(defaultSave(), parsed);
+  }catch(e){ return defaultSave(); }
+}
+function persistSave(){
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); }catch(e){}
+}
+
+/* ============================================================
+   ЗВУК (Web Audio API, всё процедурно)
+============================================================ */
+let actx = null;
+function ensureAudio(){
+  if(!actx){
+    try{ actx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ actx=null; }
+  } else if(actx.state==='suspended'){ actx.resume(); }
+}
+function beep(freq, dur, type, vol, glideTo){
+  if(!SAVE.settings.sfx || !actx) return;
+  const t0 = actx.currentTime;
+  const osc = actx.createOscillator();
+  const gain = actx.createGain();
+  osc.type = type||'square';
+  osc.frequency.setValueAtTime(freq, t0);
+  if(glideTo) osc.frequency.exponentialRampToValueAtTime(Math.max(20,glideTo), t0+dur);
+  gain.gain.setValueAtTime((vol||0.2), t0);
+  gain.gain.exponentialRampToValueAtTime(0.001, t0+dur);
+  osc.connect(gain); gain.connect(actx.destination);
+  osc.start(t0); osc.stop(t0+dur+0.02);
+}
+function noiseBurst(dur, vol){
+  if(!SAVE.settings.sfx || !actx) return;
+  const bufferSize = actx.sampleRate*dur;
+  const buffer = actx.createBuffer(1, bufferSize, actx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for(let i=0;i<bufferSize;i++) data[i]=(Math.random()*2-1)*(1-i/bufferSize);
+  const src = actx.createBufferSource(); src.buffer=buffer;
+  const gain = actx.createGain(); gain.gain.value = vol||0.3;
+  src.connect(gain); gain.connect(actx.destination);
+  src.start();
+}
+const SFX = {
+  jump:()=>beep(420,0.14,'square',0.15,650),
+  attack:()=>beep(180,0.08,'sawtooth',0.18,90),
+  hurt:()=>{beep(120,0.2,'square',0.22,60); noiseBurst(0.15,0.15);},
+  dash:()=>beep(700,0.12,'sine',0.15,1100),
+  death:()=>beep(300,0.6,'sawtooth',0.2,40),
+  collect:()=>beep(880,0.1,'sine',0.15,1300),
+  ui:()=>beep(500,0.06,'square',0.1,700),
+  boss:()=>{beep(80,0.5,'sawtooth',0.25,40); noiseBurst(0.3,0.2);},
+  victory:()=>{beep(523,0.15,'sine',0.2,0);setTimeout(()=>beep(659,0.15,'sine',0.2,0),150);setTimeout(()=>beep(784,0.3,'sine',0.2,0),300);},
+  meme:()=>{beep(200,0.2,'square',0.2,900); noiseBurst(0.2,0.2);}
+};
+function vibrate(ms){ if(SAVE.settings.vibe && navigator.vibrate) navigator.vibrate(ms); }
+
+// простая процедурная фоновая музыка: несколько нот по кругу, разные для зон
+let musicTimer=null, musicPatternIndex=0;
+const MUSIC_PATTERNS = {
+  smakograd:[262,330,392,330,294,330,392,440],
+  tokmachka:[220,220,262,196,220,262,294,220],
+  deadline:[196,185,196,174,165,174,196,185],
+  kotomka:[147,220,165,247,131,196,155,233],
+  final:[110,131,110,98,110,131,146,110],
+  boss:[98,110,98,87,110,131,98,87]
+};
+function startMusic(patternName){
+  stopMusic();
+  if(!SAVE.settings.music) return;
+  const pattern = MUSIC_PATTERNS[patternName]||MUSIC_PATTERNS.smakograd;
+  musicPatternIndex=0;
+  musicTimer = setInterval(()=>{
+    ensureAudio();
+    if(!actx || !SAVE.settings.music) return;
+    const f = pattern[musicPatternIndex % pattern.length];
+    beep(f,0.28,'triangle',0.06,f*0.98);
+    musicPatternIndex++;
+  }, 300);
+}
+function stopMusic(){ if(musicTimer){clearInterval(musicTimer); musicTimer=null;} }
+
+/* ============================================================
+   ВВОД
+============================================================ */
+const keys = {};
+window.addEventListener('keydown', e=>{
+  keys[e.code]=true;
+  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
+});
+window.addEventListener('keyup', e=>{ keys[e.code]=false; });
+
+const joyZone = document.getElementById('joyZone');
+const joyBase = document.getElementById('joyBase');
+const joyStick = document.getElementById('joyStick');
+let joyActive=false, joyStartX=0, joyStartY=0, joyDX=0, joyDY=0, joyTouchId=null;
+function joyStart(id,x,y){
+  joyActive=true; joyTouchId=id; joyStartX=x; joyStartY=y;
+  joyBase.style.display='block'; joyStick.style.display='block';
+  joyBase.style.left=(x-55)+'px'; joyBase.style.top=(y-55)+'px';
+  joyStick.style.left=(x-25)+'px'; joyStick.style.top=(y-25)+'px';
+  joyDX=0; joyDY=0;
+}
+function joyMove(x,y){
+  if(!joyActive) return;
+  let dx=x-joyStartX, dy=y-joyStartY;
+  const maxR=50; const dist=Math.hypot(dx,dy);
+  if(dist>maxR){ dx=dx/dist*maxR; dy=dy/dist*maxR; }
+  joyStick.style.left=(joyStartX+dx-25)+'px'; joyStick.style.top=(joyStartY+dy-25)+'px';
+  joyDX=dx/maxR; joyDY=dy/maxR;
+}
+function joyEnd(){
+  joyActive=false; joyTouchId=null;
+  joyBase.style.display='none'; joyStick.style.display='none';
+  joyDX=0; joyDY=0;
+}
+function relCoords(t){
+  const rect = joyZone.getBoundingClientRect();
+  return {x:t.clientX-rect.left, y:t.clientY-rect.top};
+}
+joyZone.addEventListener('touchstart', e=>{
+  e.preventDefault();
+  const t=e.changedTouches[0]; const c=relCoords(t);
+  joyStart(t.identifier, c.x, c.y);
+}, {passive:false});
+joyZone.addEventListener('touchmove', e=>{
+  e.preventDefault();
+  for(const t of e.changedTouches){
+    if(t.identifier===joyTouchId){ const c=relCoords(t); joyMove(c.x,c.y); }
+  }
+}, {passive:false});
+joyZone.addEventListener('touchend', e=>{
+  for(const t of e.changedTouches){ if(t.identifier===joyTouchId) joyEnd(); }
+}, {passive:false});
+joyZone.addEventListener('touchcancel', joyEnd);
+// mouse fallback for desktop testing on joy zone
+joyZone.addEventListener('mousedown', e=>{ const r=joyZone.getBoundingClientRect(); joyStart('mouse', e.clientX-r.left, e.clientY-r.top); });
+window.addEventListener('mousemove', e=>{ if(joyActive && joyTouchId==='mouse'){ const r=joyZone.getBoundingClientRect(); joyMove(e.clientX-r.left, e.clientY-r.top);} });
+window.addEventListener('mouseup', e=>{ if(joyTouchId==='mouse') joyEnd(); });
+
+const btnState = {jump:false, attack:false, dash:false, meme:false};
+function bindBtn(el, key){
+  const down=(e)=>{ e.preventDefault(); btnState[key]=true; };
+  const up=(e)=>{ e.preventDefault(); btnState[key]=false; };
+  el.addEventListener('touchstart', down, {passive:false});
+  el.addEventListener('touchend', up, {passive:false});
+  el.addEventListener('touchcancel', up, {passive:false});
+  el.addEventListener('mousedown', down);
+  el.addEventListener('mouseup', up);
+  el.addEventListener('mouseleave', up);
+}
+bindBtn(document.getElementById('jumpBtn'),'jump');
+bindBtn(document.getElementById('attackBtn'),'attack');
+bindBtn(document.getElementById('dashBtn'),'dash');
+
+let memeCooldown = 0;
+const MEME_COOLDOWN_MAX = 12;
+document.getElementById('memeBtn').addEventListener('touchstart', e=>{e.preventDefault(); triggerMeme();});
+document.getElementById('memeBtn').addEventListener('click', triggerMeme);
+
+function inputLeft(){ return keys['KeyA']||keys['ArrowLeft']||joyDX<-0.3; }
+function inputRight(){ return keys['KeyD']||keys['ArrowRight']||joyDX>0.3; }
+function inputJumpPressed(){ return keys['Space']||btnState.jump; }
+function inputAttackPressed(){ return keys['KeyJ']||btnState.attack; }
+function inputDashPressed(){ return keys['KeyK']||btnState.dash; }
+
+/* ============================================================
+   ОБЩИЕ УТИЛИТЫ
+============================================================ */
+function rectsOverlap(a,b){
+  return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y;
+}
+function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+function rand(a,b){ return a + Math.random()*(b-a); }
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function floatMessage(text, x, y){
+  const el = document.createElement('div');
+  el.className='floatMsg'; el.textContent=text;
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = rect.width/VW, scaleY = rect.height/VH;
+  el.style.left=(rect.left + x*scaleX)+'px';
+  el.style.top=(rect.top + y*scaleY)+'px';
+  document.getElementById('floatText').appendChild(el);
+  setTimeout(()=>el.remove(), 1650);
+}
+
+/* ============================================================
+   ЧАСТИЦЫ И ЭФФЕКТЫ
+============================================================ */
+let particles = [];
+const MAX_PARTICLES = 160;
+function spawnParticles(x,y,count,opts){
+  opts = opts||{};
+  for(let i=0;i<count;i++){
+    if(particles.length>=MAX_PARTICLES) particles.shift();
+    particles.push({
+      x, y,
+      vx: rand(opts.minVX!==undefined?opts.minVX:-120, opts.maxVX!==undefined?opts.maxVX:120),
+      vy: rand(opts.minVY!==undefined?opts.minVY:-220, opts.maxVY!==undefined?opts.maxVY:-40),
+      life: rand(0.3,0.7),
+      maxLife: 0.7,
+      size: rand(2,5),
+      color: opts.color || '#ff9fd0',
+      grav: opts.grav!==undefined?opts.grav:900
+    });
+  }
+}
+function updateParticles(dt){
+  for(let i=particles.length-1;i>=0;i--){
+    const p = particles[i];
+    p.vy += p.grav*dt;
+    p.x += p.vx*dt; p.y += p.vy*dt;
+    p.life -= dt;
+    if(p.life<=0) particles.splice(i,1);
+  }
+}
+function drawParticles(){
+  for(const p of particles){
+    ctx.globalAlpha = clamp(p.life/p.maxLife,0,1);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x-camera.x, p.y-camera.y, p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+}
+
+let shakeTime=0, shakeMag=0;
+function screenShake(mag, time){ shakeMag=Math.max(shakeMag,mag); shakeTime=Math.max(shakeTime,time); }
+
+/* ============================================================
+   КАМЕРА
+============================================================ */
+const camera = {x:0,y:0};
+
+/* ============================================================
+   ИГРОК: РЭМИЛИЯ
+============================================================ */
+const player = {
+  x:60, y:400, w:34, h:40,
+  vx:0, vy:0,
+  onGround:false,
+  facing:1,
+  hp:100, maxHp:100,
+  rage:0, maxRage:100,
+  state:'idle', // idle, walk, jump, fall, attack, dash, hurt, dead, victory, taunt
+  stateTimer:0,
+  attackTimer:0,
+  attackHitDone:false,
+  dashTimer:0, dashCooldown:0,
+  invuln:0,
+  hurtFlash:0,
+  animT:0,
+  idleTimer:0,
+  coins:0,
+  facingLock:0,
+};
+const MOVE_SPEED = 165;
+const JUMP_VELOCITY = -700;
+const GRAV_BASE = 1350;
+let gravityMult = 1; // может меняться боссом Котомка
+const DASH_SPEED = 480;
+const DASH_TIME = 0.18;
+const DASH_COOLDOWN_MAX = 0.9;
+
+function resetPlayerStats(){
+  player.hp = player.maxHp;
+  player.rage = 0;
+  player.state='idle'; player.vx=0; player.vy=0;
+  player.invuln=0; player.dashTimer=0; player.dashCooldown=0;
+}
+
+function addRage(v){
+  player.rage = clamp(player.rage+v, 0, player.maxRage);
+}
+
+function damagePlayer(amount, knockDir){
+  if(player.invuln>0 || player.state==='dead' || player.state==='victory') return;
+  player.hp -= amount;
+  player.invuln = 1.0;
+  player.hurtFlash = 0.3;
+  player.state='hurt'; player.stateTimer=0.25;
+  player.vx = (knockDir||player.facing*-1)*180;
+  player.vy = -220;
+  addRage(18);
+  SFX.hurt(); vibrate(60); screenShake(6,0.25);
+  if(player.hp<=0){
+    player.hp=0; player.state='dead'; player.stateTimer=0;
+    SFX.death();
+    setTimeout(()=>{ showGameOver(); }, 900);
+  }
+}
+
+/* ============================================================
+   УРОВНИ: ДАННЫЕ
+============================================================ */
+// каждая зона: platforms, hazards, enemies, collectibles, checkpoints, width, bg-стиль, диалоги, boss
+const ZONES = [];
+
+function makeZone(cfg){ ZONES.push(cfg); }
+
+// --- ЗОНА 1: СМАКОГРАД ---
+makeZone({
+  id:'smakograd', name:'СМАКОГРАД', musicKey:'smakograd', width:2600, groundY:560,
+  bgTop:'#ffd8ec', bgBottom:'#ff9fd0', deco:'candy',
+  platforms:[
+    {x:0,y:560,w:2600,h:150},
+    {x:300,y:470,w:120,h:20},
+    {x:520,y:400,w:100,h:20},
+    {x:760,y:480,w:140,h:20},
+    {x:1000,y:420,w:100,h:20},
+    {x:1220,y:500,w:160,h:20},
+    {x:1480,y:430,w:120,h:20},
+    {x:1700,y:500,w:100,h:20},
+    {x:1900,y:420,w:140,h:20},
+    {x:2150,y:490,w:120,h:20},
+  ],
+  hazards:[
+    {x:640,y:540,w:80,h:20,type:'spike'},
+    {x:1360,y:540,w:80,h:20,type:'spike'},
+    {x:2050,y:540,w:60,h:20,type:'spike'},
+  ],
+  enemies:[
+    {type:'walker', x:520, y:0, range:[460,660]},
+    {type:'walker', x:1050, y:0, range:[1000,1200]},
+    {type:'jumper', x:1500, y:0},
+    {type:'walker', x:1950, y:0, range:[1900,2100]},
+  ],
+  collectibles:[
+    {x:340,y:430,type:'coin'},{x:560,y:360,type:'coin'},{x:1040,y:380,type:'coin'},
+    {x:1260,y:460,type:'coin'},{x:1740,y:460,type:'coin'},{x:2190,y:450,type:'coin'},
+    {x:900,y:520,type:'secret'},
+  ],
+  checkpoints:[300, 1200, 2000],
+  exitX:2560,
+  boss:'ilya',
+  dialogues:[
+    {x:80, id:'d1', seenOnce:true, lines:[
+      {sp:'Рэмилия', tx:'Так. Опять я куда-то вляпалась. Отлично. Просто отлично.'},
+      {sp:'Рэмилия', tx:'Смакоград, значит. Ну хотя бы пахнет вкусно.'},
+      {sp:'Вергилий (издалека)', tx:'РЭМИЛИЯ! БЕГИ! ОНИ ПОДОЖГЛИ ДЭДЛАЙН-МАШИНУ!'},
+      {sp:'Рэмилия', tx:'Кто такой Вергилий и почему он так уверен, что я побегу именно к нему?'},
+    ]},
+    {x:1150, id:'d2', seenOnce:true, lines:[
+      {sp:'Тимбул', tx:'...привет.'},
+      {sp:'Рэмилия', tx:'Ты ещё кто. Стой. ТЫ. Почему ты сидишь на фонаре.'},
+      {sp:'Тимбул', tx:'Я тут всегда сидел. Ты просто раньше не смотрела наверх.'},
+      {sp:'Рэмилия', tx:'Ладно, ты странный, но безобидный. Пока.'},
+    ]},
+  ],
+});
+
+// --- ЗОНА 2: МАЛАЯ ТОКМАЧКА ---
+makeZone({
+  id:'tokmachka', name:'МАЛАЯ ТОКМАЧКА', musicKey:'tokmachka', width:3000, groundY:580,
+  bgTop:'#cfe8ff', bgBottom:'#6fa8dc', deco:'village',
+  platforms:[
+    {x:0,y:580,w:600,h:130},
+    {x:680,y:520,w:90,h:16},
+    {x:820,y:450,w:90,h:16},
+    {x:960,y:390,w:90,h:16, moving:{axis:'x',range:120,speed:60}},
+    {x:1200,y:480,w:600,h:130},
+    {x:1900,y:420,w:100,h:16, moving:{axis:'y',range:80,speed:50}},
+    {x:2100,y:520,w:120,h:16},
+    {x:2300,y:440,w:100,h:16},
+    {x:2500,y:520,w:500,h:130},
+  ],
+  hazards:[
+    {x:600,y:560,w:80,h:20,type:'pit'},
+    {x:1780,y:500,w:120,h:20,type:'pit'},
+    {x:2420,y:500,w:80,h:20,type:'pit'},
+    {x:2600,y:500,w:60,h:20,type:'spike'},
+  ],
+  enemies:[
+    {type:'walker', x:250, y:0, range:[100,550]},
+    {type:'shooter', x:1300, y:0},
+    {type:'jumper', x:1550, y:0},
+    {type:'walker', x:2150, y:0, range:[2100,2350]},
+    {type:'shooter', x:2650, y:0},
+  ],
+  collectibles:[
+    {x:700,y:480,type:'coin'},{x:840,y:410,type:'coin'},{x:1250,y:440,type:'coin'},
+    {x:1450,y:440,type:'coin'},{x:2130,y:480,type:'coin'},{x:2330,y:400,type:'coin'},
+    {x:1600,y:200,type:'secret'},
+  ],
+  checkpoints:[650,1300,2200],
+  exitX:2960,
+  boss:'sisters',
+  dialogues:[
+    {x:700, id:'d3', seenOnce:true, lines:[
+      {sp:'Кира', tx:'Смотри, Рева, ещё одна. Как думаешь, эта тоже забудет?'},
+      {sp:'Рева', tx:'Все забывают. Кроме той, с фонаря.'},
+      {sp:'Рэмилия', tx:'Забуду что? О чём вы вообще... так, стоп, откуда вы знаете про фонарь?'},
+      {sp:'Кира', tx:'Мы всё знаем, милая. Это не наша заслуга.'},
+    ]},
+    {x:2000, id:'d4', seenOnce:true, lines:[
+      {sp:'NPC (Илья Боктерия, издалека)', tx:'ИЗВИНИТЕ ЗА ТОТ БОЙ, Я ПРОСТО ДЕЛАЛ СВОЮ РАБОТУ.'},
+      {sp:'Рэмилия', tx:'...погоди, я же ЕЩЁ с тобой не дралась?'},
+      {sp:'NPC (Илья Боктерия, издалека)', tx:'ТОЧНО. ИЗВИНИ. ЕЩЁ РАЗ ИЗВИНИТЕ ЗА ТОТ БОЙ.'},
+    ]},
+  ],
+});
+
+// --- ЗОНА 3: ДЭДЛАЙН-МАШИНА ---
+makeZone({
+  id:'deadline', name:'ДЭДЛАЙН-МАШИНА', musicKey:'deadline', width:3200, groundY:580,
+  bgTop:'#2b1030', bgBottom:'#120616', deco:'machine',
+  platforms:[
+    {x:0,y:580,w:500,h:130},
+    {x:560,y:500,w:80,h:16, moving:{axis:'x',range:150,speed:90}},
+    {x:780,y:420,w:80,h:16},
+    {x:960,y:520,w:80,h:16, moving:{axis:'y',range:100,speed:70}},
+    {x:1150,y:400,w:80,h:16},
+    {x:1350,y:480,w:400,h:130},
+    {x:1850,y:420,w:80,h:16, moving:{axis:'x',range:180,speed:110}},
+    {x:2100,y:340,w:80,h:16},
+    {x:2300,y:480,w:80,h:16},
+    {x:2500,y:400,w:600,h:130},
+  ],
+  hazards:[
+    {x:500,y:560,w:60,h:20,type:'pit'},
+    {x:1130,y:560,w:220,h:20,type:'pit'},
+    {x:1750,y:560,w:100,h:20,type:'pit'},
+    {x:2420,y:380,w:80,h:20,type:'spike'},
+  ],
+  enemies:[
+    {type:'shooter', x:800, y:0},
+    {type:'jumper', x:1180, y:0},
+    {type:'walker', x:1450, y:0, range:[1370,1700]},
+    {type:'shooter', x:2130, y:0},
+    {type:'jumper', x:2600, y:0},
+  ],
+  collectibles:[
+    {x:800,y:380,type:'coin'},{x:990,y:480,type:'coin'},{x:1180,y:360,type:'coin'},
+    {x:1880,y:380,type:'coin'},{x:2330,y:440,type:'coin'},{x:2600,y:340,type:'secret'},
+  ],
+  checkpoints:[600,1400,2500],
+  exitX:3160,
+  boss:'kotomka',
+  rulesBreak:true,
+  dialogues:[
+    {x:120, id:'d5', seenOnce:true, lines:[
+      {sp:'Рэмилия', tx:'Так, а почему тут те же самые платформы, что и в Токмачке? Один в один.'},
+      {sp:'Тимбул (сидит на трубе)', tx:'Потому что мир не успевает придумывать новое. У него дедлайн.'},
+      {sp:'Рэмилия', tx:'Тимбул?! Мы же в другой зоне! Ты как сюда попал?!'},
+      {sp:'Тимбул', tx:'Я никуда не попадал. Это ты попала.'},
+    ]},
+    {x:1600, id:'d6', seenOnce:true, lines:[
+      {sp:'Дэдлайн-машина', tx:'ВРЕМЯ НА ГЛАВУ ИСТЕКАЕТ. ЗАВЕРШИТЬ ВОСПОМИНАНИЕ?'},
+      {sp:'Рэмилия', tx:'Завершить... что? Кто вообще спрашивает игрока такое посреди платформера?'},
+      {sp:'Дэдлайн-машина', tx:'ИЗВИНИТЕ. ПРОДОЛЖАЮ РАБОТУ.'},
+    ]},
+  ],
+});
+
+// --- ЗОНА 4: ЗОНА КОТОМКИ ---
+makeZone({
+  id:'kotomkazone', name:'ЗОНА КОТОМКИ', musicKey:'kotomka', width:2800, groundY:580,
+  bgTop:'#1a0030', bgBottom:'#3d0057', deco:'void',
+  platforms:[
+    {x:0,y:580,w:400,h:130},
+    {x:460,y:480,w:100,h:16},
+    {x:660,y:380,w:100,h:16},
+    {x:860,y:480,w:100,h:16},
+    {x:1060,y:300,w:100,h:16},
+    {x:1260,y:480,w:100,h:16},
+    {x:1500,y:580,w:300,h:130},
+    {x:1900,y:420,w:100,h:16},
+    {x:2100,y:280,w:100,h:16},
+    {x:2300,y:480,w:400,h:130},
+  ],
+  hazards:[
+    {x:400,y:560,w:60,h:20,type:'pit'},
+    {x:1800,y:560,w:100,h:20,type:'pit'},
+    {x:2260,y:460,w:40,h:20,type:'spike'},
+  ],
+  enemies:[
+    {type:'jumper', x:700, y:0},
+    {type:'shooter', x:1100, y:0},
+    {type:'walker', x:1550, y:0, range:[1500,1750]},
+    {type:'jumper', x:1950, y:0},
+  ],
+  collectibles:[
+    {x:500,y:440,type:'coin'},{x:900,y:440,type:'coin'},{x:1100,y:260,type:'coin'},
+    {x:1940,y:380,type:'coin'},{x:2140,y:240,type:'secret'},
+  ],
+  checkpoints:[500,1500,2100],
+  exitX:2760,
+  boss:'kotomkaFinalPrep',
+  weirdZone:true,
+  dialogues:[
+    {x:100, id:'d7', seenOnce:true, lines:[
+      {sp:'Рэмилия', tx:'Так, а вот это уже не смешно. Тут вообще нет неба. Просто... фиолетовая пустота.'},
+      {sp:'Тимбул', tx:'Здесь заканчиваются декорации. Дальше я рисовал уже не очень старательно.'},
+      {sp:'Рэмилия', tx:'Рисовал? ЧТО значит "рисовал"? Тимбул, что ты вообще такое?'},
+      {sp:'Тимбул', tx:'Скоро скажу. Правда. Просто... подожди ещё немного, ладно?'},
+    ]},
+    {x:1650, id:'d8', seenOnce:true, lines:[
+      {sp:'Котомка (голос отовсюду)', tx:'ты снова здесь. в шестой раз. или в седьмой. я сбилась.'},
+      {sp:'Рэмилия', tx:'В ШЕСТОЙ РАЗ? Я тут в первый раз, психи вы все, честное слово.'},
+      {sp:'Котомка', tx:'конечно. в первый. как и всегда в первый.'},
+    ]},
+  ],
+});
+
+// --- ЗОНА 5: ФИНАЛЬНАЯ ---
+makeZone({
+  id:'final', name:'???', musicKey:'final', width:2200, groundY:580,
+  bgTop:'#050008', bgBottom:'#1a0022', deco:'final',
+  platforms:[
+    {x:0,y:580,w:2200,h:130},
+    {x:300,y:460,w:120,h:16},
+    {x:600,y:380,w:120,h:16},
+    {x:900,y:460,w:120,h:16},
+    {x:1200,y:380,w:120,h:16},
+    {x:1500,y:460,w:120,h:16},
+  ],
+  hazards:[],
+  enemies:[],
+  collectibles:[
+    {x:340,y:420,type:'coin'},{x:940,y:420,type:'coin'},{x:1540,y:420,type:'coin'},
+  ],
+  checkpoints:[300],
+  exitX:2150,
+  boss:'final',
+  dialogues:[
+    {x:60, id:'d9', seenOnce:true, lines:[
+      {sp:'Тимбул', tx:'Ладно. Хватит бегать по кругу. Пора рассказать всё как есть.'},
+      {sp:'Рэмилия', tx:'Наконец-то. Только давай без драм, у меня и так голова раскалывается уже неделю.'},
+      {sp:'Тимбул', tx:'Вот именно поэтому она и раскалывается, Рэмилия. Ты не в Смакограде. Ты в больнице.'},
+      {sp:'Рэмилия', tx:'...чего?'},
+      {sp:'Тимбул', tx:'Ты упала с лестницы Малой Токмачки. По-настоящему. Три недели назад.'},
+      {sp:'Тимбул', tx:'Весь этот мир — то, что твоя голова слепила из старых мемов, шуток и людей, которых ты любишь, лишь бы не думать о боли.'},
+      {sp:'Рэмилия', tx:'А ты тогда кто? Галлюцинация с фонаря?'},
+      {sp:'Тимбул', tx:'Я — рисунок, который ты сделала в шесть лет и назвала "друг на всякий случай". Похоже, случай настал.'},
+      {sp:'Тимбул', tx:'Дэдлайн-машина — это твой страх, что ты не успеешь очнуться вовремя. Котомка — твоя усталость. Она правда помнит все твои попытки.'},
+      {sp:'Рэмилия', tx:'Ладно. Хорошо. Просто чтобы уточнить: я злая, толстая и вспыльчивая — ЭТО ТОЖЕ Я САМА ПРИДУМАЛА?'},
+      {sp:'Тимбул', tx:'Нет. Это ты настоящая. Мозг не меняет характер, он просто выбирает декорации.'},
+      {sp:'Рэмилия', tx:'...окей, это почему-то успокаивает больше, чем должно. Так что делать?'},
+      {sp:'Тимбул', tx:'Дойти до конца. В последний раз. Дальше решать уже не мне.'},
+    ]},
+  ],
+});
+
+/* ============================================================
+   ВРАГИ
+============================================================ */
+class Enemy{
+  constructor(def){
+    this.type = def.type;
+    this.x = def.x; this.y = def.groundY!==undefined?def.groundY:0;
+    this.w = 28; this.h = 28;
+    this.vx = this.type==='walker'? 60 : 0;
+    this.vy = 0;
+    this.hp = this.type==='walker'?30:(this.type==='jumper'?36:26);
+    this.dead=false;
+    this.range = def.range || null;
+    this.dir = 1;
+    this.shootTimer = rand(1,2);
+    this.jumpTimer = rand(0.6,1.4);
+    this.hitFlash=0;
+    this.animT=0;
+    this.spawnX=def.x;
+  }
+}
+class Projectile{
+  constructor(x,y,vx,vy,friendly){
+    this.x=x;this.y=y;this.vx=vx;this.vy=vy;this.w=10;this.h=10;this.friendly=friendly;this.dead=false;this.life=3;
+  }
+}
+let projectiles = [];
+
+function placeEnemiesOnGround(zone){
+  for(const e of zone.enemyInstances){
+    e.groundY = zone.def.groundY - e.h;
+  }
+}
+
+function updateEnemy(e, dt, zone){
+  if(e.dead) return;
+  e.animT += dt;
+  const groundY = zone.def.groundY - e.h;
+  if(e.type==='walker'){
+    e.x += e.vx*e.dir*dt;
+    if(e.range && (e.x < e.range[0] || e.x > e.range[1])) e.dir*=-1;
+    e.y = groundY;
+  } else if(e.type==='jumper'){
+    e.jumpTimer -= dt;
+    e.vy += GRAV_BASE*dt;
+    e.y += e.vy*dt;
+    if(e.y >= groundY){ e.y = groundY; e.vy=0;
+      if(e.jumpTimer<=0){
+        e.jumpTimer = rand(1.0,1.8);
+        e.vy = -380;
+        e.dir = player.x > e.x ? 1 : -1;
+        e.vx = 90;
+      }
     }
-
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    // ==================== AUDIO SYSTEM ====================
-    const AudioSys = {
-        ctx: null,
-        masterGain: null,
-        musicGain: null,
-        sfxGain: null,
-        initialized: false,
-        musicInterval: null,
-        currentMusic: null,
-        settings: { music: true, sound: true, vibration: true },
-        init() {
-            if (this.initialized) return;
-            try {
-                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-                this.masterGain = this.ctx.createGain();
-                this.masterGain.gain.value = 1;
-                this.masterGain.connect(this.ctx.destination);
-                this.musicGain = this.ctx.createGain();
-                this.musicGain.gain.value = 0.25;
-                this.musicGain.connect(this.masterGain);
-                this.sfxGain = this.ctx.createGain();
-                this.sfxGain.gain.value = 0.5;
-                this.sfxGain.connect(this.masterGain);
-                this.initialized = true;
-            } catch(e) { console.warn('Audio init failed', e); }
-        },
-        resume() {
-            if (this.ctx && this.ctx.state === 'suspended') {
-                this.ctx.resume().catch(() => {});
-            }
-        },
-        playTone(freq, duration, type = 'square', vol = 0.3, target = 'sfx', slideFrom = null) {
-            if (!this.initialized || !this.ctx) return;
-            this.resume();
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = type;
-            osc.frequency.value = freq;
-            if (slideFrom) osc.frequency.setValueAtTime(slideFrom, this.ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(freq, this.ctx.currentTime + 0.05);
-            gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
-            osc.connect(gain);
-            const targetGain = target === 'music' ? this.musicGain : this.sfxGain;
-            gain.connect(targetGain);
-            osc.start(this.ctx.currentTime);
-            osc.stop(this.ctx.currentTime + duration + 0.05);
-        },
-        sfx(name) {
-            if (!this.settings.sound) return;
-            switch(name) {
-                case 'jump': this.playTone(300, 0.15, 'square', 0.2); break;
-                case 'attack': this.playTone(500, 0.1, 'sawtooth', 0.25, 'sfx', 800); break;
-                case 'hit': this.playTone(200, 0.15, 'sawtooth', 0.3, 'sfx', 400); break;
-                case 'hurt': this.playTone(150, 0.25, 'square', 0.3, 'sfx', 300); this.playTone(100, 0.3, 'sawtooth', 0.2); break;
-                case 'dash': this.playTone(600, 0.1, 'sine', 0.2, 'sfx', 900); break;
-                case 'death': this.playTone(100, 0.6, 'sawtooth', 0.35, 'sfx', 300); break;
-                case 'collect': this.playTone(700, 0.1, 'sine', 0.25, 'sfx', 900); this.playTone(1000, 0.15, 'sine', 0.2, 'sfx', 1200); break;
-                case 'boss': this.playTone(80, 0.5, 'sawtooth', 0.4, 'sfx', 200); break;
-                case 'win': this.playTone(500, 0.2, 'sine', 0.3); this.playTone(700, 0.2, 'sine', 0.3); this.playTone(900, 0.4, 'sine', 0.3); break;
-                case 'meme': this.playTone(400, 0.4, 'square', 0.3, 'sfx', 150); this.playTone(700, 0.3, 'sine', 0.3); break;
-                case 'checkpoint': this.playTone(600, 0.15, 'sine', 0.3); this.playTone(800, 0.15, 'sine', 0.3); break;
-                case 'secret': this.playTone(900, 0.3, 'sine', 0.3); this.playTone(1100, 0.3, 'sine', 0.3); break;
-                case 'rage': this.playTone(300, 0.4, 'sawtooth', 0.35, 'sfx', 700); break;
-                case 'dialogue': this.playTone(500, 0.06, 'sine', 0.15, 'sfx', 600); break;
-            }
-        },
-        startMusic(zone) {
-            if (!this.initialized || !this.settings.music) return;
-            this.stopMusic();
-            const freqMap = {
-                'menu': [200, 250, 300, 250],
-                'zone1': [261, 329, 392, 523],
-                'zone2': [200, 300, 400, 300],
-                'zone3': [180, 250, 350, 250],
-                'zone4': [150, 200, 280, 200],
-                'zone5': [100, 150, 220, 150],
-                'boss': [160, 180, 240, 180],
-                'final': [80, 120, 160, 120]
-            };
-            const pattern = freqMap[zone] || freqMap.zone1;
-            let step = 0;
-            this.currentMusic = zone;
-            const playStep = () => {
-                if (this.currentMusic !== zone) return;
-                if (this.settings.music && this.initialized && this.ctx) {
-                    this.playTone(pattern[step % pattern.length], 0.3, 'sine', 0.15, 'music');
-                    this.playTone(pattern[step % pattern.length] * 2, 0.25, 'triangle', 0.08, 'music');
-                }
-                step++;
-            };
-            playStep();
-            this.musicInterval = setInterval(playStep, 500);
-        },
-        stopMusic() {
-            if (this.musicInterval) {
-                clearInterval(this.musicInterval);
-                this.musicInterval = null;
-            }
-            this.currentMusic = null;
-        },
-        vibrate(pattern) {
-            if (this.settings.vibration && navigator.vibrate) {
-                try { navigator.vibrate(pattern); } catch(e) {}
-            }
-        }
-    };
-
-    // ==================== GAME STATE ====================
-    const SAVE_KEY = 'remilia_timbul_save';
-    const SETTINGS_KEY = 'remilia_settings';
-
-    let gameState = 'menu'; // menu, playing, paused, gameover, boss, final, dialogue, transition
-    let currentZone = 1;
-    let currentCheckpoint = null;
-    let player = null;
-    let enemies = [];
-    let platforms = [];
-    let collectibles = [];
-    let particles = [];
-    let projectiles = [];
-    let npcs = [];
-    let bosses = [];
-    let camera = { x: 0, y: 0, shakeX: 0, shakeY: 0, shakeIntensity: 0 };
-    let rage = 0;
-    let maxRage = 100;
-    let health = 5;
-    let maxHealth = 5;
-    let score = 0;
-    let secretsFound = [];
-    let defeatedBosses = [];
-    let unlockedZones = [1];
-    let dialogueQueue = [];
-    let currentDialogue = null;
-    let dialogueIndex = 0;
-    let memeCooldown = 0;
-    let memeTimer = 0;
-    let memeEffects = [];
-    let gameTime = 0;
-    let bossDefeatedThisFrame = false;
-    let finalSequenceActive = false;
-    let finalTimbulReveal = false;
-    let storyProgress = 0;
-    let timbulLocations = [];
-    let checkpoints = [];
-    let transitionAlpha = 1;
-    let transitionTarget = null;
-    let transitionType = 'fade_in';
-    let timerBars = [];
-    let floatingTexts = [];
-    let npcDialogues = [];
-    let bossIntroActive = false;
-    let bossIntroTimer = 0;
-    let bossName = '';
-    let screenEffect = { type: null, timer: 0, intensity: 0 };
-    let zoneNames = ['', 'СМАКОГРАД', 'МАЛАЯ ТОКМАЧКА', 'ДЭДЛАЙН-МАШИНА', 'ЗОНА КОТОМКИ', 'ФИНАЛЬНАЯ ЗОНА'];
-    let currentZoneName = '';
-    let zoneTransitionTimer = 0;
-    let timbulActive = false;
-    let timbulTimer = 0;
-    let timbulMessage = '';
-    let secretMessage = '';
-    let secretTimer = 0;
-
-    // Boss tracking
-    let activeBoss = null;
-    let bossPhases = {};
-    let bossPhaseIndex = 0;
-    let bossHealth = 0;
-    let bossMaxHealth = 0;
-    let bossAttackTimer = 0;
-    let bossAttackPattern = 0;
-    let bossDefeated = false;
-    let bossNameDisplay = '';
-
-    // ==================== SETTINGS ====================
-    function loadSettings() {
-        try {
-            const s = localStorage.getItem(SETTINGS_KEY);
-            if (s) {
-                const parsed = JSON.parse(s);
-                AudioSys.settings = { ...AudioSys.settings, ...parsed };
-            }
-        } catch(e) {}
+    e.x += e.vx*e.dir*dt*0.5;
+  } else if(e.type==='shooter'){
+    e.y = groundY;
+    e.shootTimer -= dt;
+    if(e.shootTimer<=0){
+      e.shootTimer = rand(1.6,2.4);
+      const dir = player.x > e.x ? 1 : -1;
+      projectiles.push(new Projectile(e.x+e.w/2, e.y+e.h/2, dir*220, -40, false));
+      SFX.attack();
     }
-    function saveSettings() {
-        try {
-            localStorage.setItem(SETTINGS_KEY, JSON.stringify(AudioSys.settings));
-        } catch(e) {}
+  }
+  if(e.hitFlash>0) e.hitFlash -= dt;
+
+  // столкновение с игроком (контактный урон)
+  const pb = {x:player.x, y:player.y, w:player.w, h:player.h};
+  const eb = {x:e.x, y:e.y, w:e.w, h:e.h};
+  if(rectsOverlap(pb,eb) && player.invuln<=0 && player.state!=='dead'){
+    damagePlayer(8, player.x < e.x ? -1:1);
+  }
+}
+
+function drawEnemy(e){
+  const sx = e.x - camera.x, sy = e.y - camera.y;
+  ctx.save();
+  if(e.hitFlash>0){ ctx.filter='brightness(2)'; }
+  if(e.type==='walker'){
+    ctx.fillStyle='#4caf50';
+    ctx.beginPath(); ctx.ellipse(sx+e.w/2, sy+e.h/2, e.w/2, e.h/2, 0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#1b5e20';
+    ctx.fillRect(sx+e.w/2-8, sy+8, 4,4); ctx.fillRect(sx+e.w/2+4, sy+8, 4,4);
+    const legOff = Math.sin(e.animT*10)*3;
+    ctx.fillRect(sx+4, sy+e.h-2+legOff, 6,4);
+    ctx.fillRect(sx+e.w-10, sy+e.h-2-legOff, 6,4);
+  } else if(e.type==='jumper'){
+    ctx.fillStyle='#ff7043';
+    ctx.beginPath();
+    for(let i=0;i<8;i++){
+      const ang = i/8*Math.PI*2;
+      const r = i%2===0? e.w/2 : e.w/2+5;
+      const px = sx+e.w/2+Math.cos(ang)*r, py=sy+e.h/2+Math.sin(ang)*r;
+      if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
     }
-    function loadSave() {
-        try {
-            const s = localStorage.getItem(SAVE_KEY);
-            if (s) {
-                const d = JSON.parse(s);
-                if (d.unlockedZones) unlockedZones = d.unlockedZones;
-                if (d.defeatedBosses) defeatedBosses = d.defeatedBosses;
-                if (d.secretsFound) secretsFound = d.secretsFound;
-                if (d.score) score = d.score;
-                if (d.storyProgress) storyProgress = d.storyProgress;
-                if (d.currentZone && d.currentZone > 1 && !unlockedZones.includes(d.currentZone)) {
-                    unlockedZones.push(d.currentZone);
-                }
-                return true;
-            }
-        } catch(e) {}
-        return false;
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#3e0000';
+    ctx.fillRect(sx+e.w/2-6, sy+e.h/2-3,3,5); ctx.fillRect(sx+e.w/2+3, sy+e.h/2-3,3,5);
+  } else if(e.type==='shooter'){
+    ctx.fillStyle='#7e57c2';
+    ctx.beginPath();
+    ctx.moveTo(sx+e.w/2, sy);
+    ctx.lineTo(sx+e.w, sy+e.h);
+    ctx.lineTo(sx, sy+e.h);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.fillRect(sx+e.w/2-2, sy+e.h-10, 4,4);
+  }
+  ctx.restore();
+}
+
+/* ============================================================
+   БОССЫ
+============================================================ */
+let boss = null; // текущий активный объект босса
+let bossActive = false;
+let bossDefeatedThisRun = false;
+
+function makeBossObj(id){
+  const base = {
+    id, hp:0, maxHp:0, phase:1, x:0, y:0, w:70, h:70, vx:0, vy:0,
+    timer:0, hitFlash:0, invuln:0, dead:false, telegraphs:[], arenaW:0
+  };
+  if(id==='ilya'){
+    return Object.assign(base, {
+      name:'ИЛЬЯ БОКТЕРИЯ', hp:220, maxHp:220, w:80, h:90,
+      x:1300, y:0, attackTimer:1.2, minionTimer:5, phase:1,
+      quotes:['ИЗВИНИ, НО РАБОТА ЕСТЬ РАБОТА.','Я ТОЖЕ НЕ ХОТЕЛ ЭТОГО БОЯ.','ПОЧЕМУ ВСЕГДА Я ДОЛЖЕН ДРАТЬСЯ?'],
+    });
+  }
+  if(id==='sisters'){
+    return Object.assign(base, {
+      name:'КИРА И РЕВА', hp:260, maxHp:260, w:120,h:60,
+      x:1300, y:0,
+      kira:{x:1250,y:0,hp:130,maxHp:130,dead:false,timer:2,alive:true},
+      reva:{x:1380,y:0,hp:130,maxHp:130,dead:false,timer:1,dashTimer:0,alive:true},
+      annoyance:0,
+      quotes:['Кира: Она снова целится в тебя, Рева!','Рева: Прости, не рассчитала!','Кира: Опять?! Ты специально?'],
+    });
+  }
+  if(id==='kotomka' || id==='kotomkaFinalPrep'){
+    return Object.assign(base, {
+      name:'КОТОМКА', hp:300, maxHp:300, w:100,h:100,
+      x:1400, y:0, ruleTimer:3, gravityFlipped:false, phase:1,
+      quotes:['я устала считать разы.','гравитация — это тоже выбор, знаешь ли.','ты опять не помнишь. это нормально.'],
+    });
+  }
+  if(id==='final'){
+    return Object.assign(base, {
+      name:'ДЕДЛАЙН (последняя форма)', hp:420, maxHp:420, w:110,h:120,
+      x:1650, y:0, phase:1, attackTimer:1, minionTimer:6, ruleTimer:4, gravityFlipped:false,
+      quotes:['ВОСПОМИНАНИЕ НЕ МОЖЕТ БЫТЬ ЗАВЕРШЕНО ДОСРОЧНО.','ТИМБУЛ, ТЫ НЕ ДОЛЖЕН БЫЛ ЕЙ ГОВОРИТЬ.','ОЧНИСЬ ПОЗЖЕ. ЕЩЁ НЕ ВРЕМЯ.'],
+    });
+  }
+  return base;
+}
+
+function startBoss(zone){
+  boss = makeBossObj(zone.boss);
+  boss.y = zone.groundY - boss.h;
+  if(boss.kira) boss.kira.y = zone.groundY-60;
+  if(boss.reva) boss.reva.y = zone.groundY-60;
+  bossActive = true;
+  bossDefeatedThisRun = false;
+  gameState = 'boss';
+  SFX.boss();
+  startMusic('boss');
+  screenShake(10,0.4);
+  showDialogueSequence([{sp:boss.name, tx: bossIntroLine(boss.id)}], ()=>{});
+}
+function bossIntroLine(id){
+  if(id==='ilya') return 'ИЗВИНИ ЗАРАНЕЕ, РЭМИЛИЯ. НАЧИНАЕМ.';
+  if(id==='sisters') return 'Кира и Рева: Ну что, потанцуем?';
+  if(id==='kotomka' || id==='kotomkaFinalPrep') return 'снова ты. ладно. покажу тебе кое-что новое.';
+  if(id==='final') return 'ТЫ НЕ ДОЛЖНА БЫЛА ДОЙТИ СЮДА. НО РАЗ УЖ ТЫ ЗДЕСЬ...';
+  return '...';
+}
+
+function damageBoss(target, amount){
+  if(target.invuln>0 || target.dead) return;
+  target.hp -= amount;
+  target.hitFlash = 0.15;
+  target.invuln = 0.12;
+  screenShake(4,0.15);
+  if(target.hp<=0){ target.hp=0; target.dead=true; }
+}
+
+function updateBossIlya(dt, zone){
+  const arenaMinX = zone.def.exitX-900, arenaMaxX = zone.def.exitX-80;
+  boss.attackTimer -= dt; boss.minionTimer -= dt;
+  if(boss.hitFlash>0) boss.hitFlash-=dt;
+  if(boss.invuln>0) boss.invuln-=dt;
+  if(boss.hp < boss.maxHp*0.6 && boss.phase===1){ boss.phase=2; boss.quoteNow='НАЧАЛО ФАЗЫ 2. ИЗВИНИ, ПРИДЁТСЯ ПОДКЛЮЧИТЬ ДРУЗЕЙ.'; queueBossLine(boss.quoteNow); }
+  if(boss.hp < boss.maxHp*0.25 && boss.phase===2){ boss.phase=3; boss.quoteNow='ЛАДНО, ТЕПЕРЬ ПО-НАСТОЯЩЕМУ ИЗВИНИ.'; queueBossLine(boss.quoteNow); }
+  // движение к игроку
+  const speed = boss.phase===3? 130:80;
+  boss.x += Math.sign(player.x-boss.x)*speed*dt*0.5;
+  boss.x = clamp(boss.x, arenaMinX, arenaMaxX);
+  // атака
+  if(boss.attackTimer<=0){
+    boss.attackTimer = boss.phase===3? 0.7 : 1.3;
+    const dist = Math.abs(player.x-boss.x);
+    if(dist<120){
+      // удар в ближнем бою
+      if(Math.abs(player.y-boss.y) < 100 && player.invuln<=0) damagePlayer(14);
+    } else {
+      projectiles.push(new Projectile(boss.x+boss.w/2, boss.y+30, Math.sign(player.x-boss.x)*260, -30, false));
     }
-    function saveGame() {
-        try {
-            const d = {
-                unlockedZones,
-                defeatedBosses,
-                secretsFound,
-                score,
-                storyProgress,
-                currentZone,
-                health,
-                maxHealth,
-                rage
-            };
-            localStorage.setItem(SAVE_KEY, JSON.stringify(d));
-        } catch(e) {}
+  }
+  if(boss.phase>=2 && boss.minionTimer<=0){
+    boss.minionTimer = 4.5;
+    const m = new Enemy({type:'jumper', x: boss.x+rand(-100,100)});
+    m.groundY = zone.def.groundY - m.h; m.y=m.groundY;
+    zone.enemyInstances.push(m);
+  }
+  const pb={x:player.x,y:player.y,w:player.w,h:player.h};
+  const bb={x:boss.x,y:boss.y,w:boss.w,h:boss.h};
+  if(rectsOverlap(pb,bb) && player.invuln<=0) damagePlayer(10);
+  if(boss.dead) finishBoss();
+}
+
+function updateBossSisters(dt, zone){
+  const arenaMinX=zone.def.exitX-900, arenaMaxX=zone.def.exitX-80;
+  if(boss.hitFlash>0) boss.hitFlash-=dt;
+  const kira=boss.kira, reva=boss.reva;
+  if(kira.alive){
+    kira.timer -= dt;
+    kira.x = clamp(kira.x + Math.sin(performance.now()/900)*30*dt, arenaMinX, arenaMaxX);
+    if(kira.timer<=0){
+      kira.timer = 3;
+      // Кира "двигает платформы" - создаём временную опасную зону-иллюзию (просто телеграф урона снизу)
+      queueBossLine(pick(['Кира: Ой, тут пол сейчас пропадёт.','Кира: Держись крепче, милая.']));
+      boss.kiraShiftTimer = 0.6;
     }
-
-    // ==================== UTILITY ====================
-    function lerp(a, b, t) { return a + (b - a) * t; }
-    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
-    function dist(x1, y1, x2, y2) { return Math.sqrt((x1-x2)**2 + (y1-y2)**2); }
-    function rand(min, max) { return Math.random() * (max - min) + min; }
-    function randInt(min, max) { return Math.floor(rand(min, max + 1)); }
-    function rectCollide(a, b) {
-        return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    if(boss.kiraShiftTimer>0){
+      boss.kiraShiftTimer -= dt;
+      if(boss.kiraShiftTimer<=0){
+        // урон, если игрок стоял слишком близко к Кире, будто пол правда пропал
+        if(Math.abs(player.x-kira.x)<80 && player.onGround) damagePlayer(10);
+      }
     }
-    function circleRectCollide(cx, cy, cr, rect) {
-        const closestX = clamp(cx, rect.x, rect.x + rect.w);
-        const closestY = clamp(cy, rect.y, rect.y + rect.h);
-        const dx = cx - closestX;
-        const dy = cy - closestY;
-        return (dx * dx + dy * dy) < (cr * cr);
+    if(kira.invuln>0) kira.invuln-=dt;
+    const kb={x:kira.x,y:kira.y,w:50,h:50};
+    const pb={x:player.x,y:player.y,w:player.w,h:player.h};
+    if(rectsOverlap(pb,kb) && player.invuln<=0) damagePlayer(6);
+  }
+  if(reva.alive){
+    reva.timer -= dt; reva.dashTimer -= dt;
+    if(reva.dashTimer>0){
+      reva.x += Math.sign(player.x-reva.x)*420*dt;
+    } else {
+      reva.x += Math.sign(player.x-reva.x)*70*dt;
+      if(reva.timer<=0){
+        reva.timer = 2.6;
+        reva.dashTimer = 0.35;
+        SFX.dash();
+        queueBossLine(pick(['Рева: С дороги!','Рева: Извини, тормоза барахлят!']));
+        if(boss.annoyance>60){
+          // если аннойанс высокий, Рева может случайно задеть Киру
+          if(Math.abs(reva.x-kira.x)<60 && kira.alive){ damageBoss(kira, 20); boss.annoyance=0; queueBossLine('Кира: РЕВА! Ты в меня попала!'); }
+        }
+      }
     }
+    if(reva.invuln>0) reva.invuln-=dt;
+    const rb={x:reva.x,y:reva.y,w:50,h:50};
+    const pb={x:player.x,y:player.y,w:player.w,h:player.h};
+    if(rectsOverlap(pb,rb) && player.invuln<=0){ damagePlayer(9); boss.annoyance+=15; }
+  }
+  boss.hp = (kira.alive?kira.hp:0)+(reva.alive?reva.hp:0);
+  if(!kira.alive && !reva.alive){ boss.dead=true; finishBoss(); }
+}
 
-    // ==================== PLAYER ====================
-    function createPlayer(x, y) {
-        return {
-            x, y, w: 22, h: 28, vx: 0, vy: 0,
-            onGround: false,
-            facing: 1,
-            attackTimer: 0,
-            attackAnim: 0,
-            dashTimer: 0,
-            invincible: 0,
-            dead: false,
-            animFrame: 0,
-            animTimer: 0,
-            walkCycle: 0,
-            hurtTimer: 0,
-            jumpPressed: false,
-            jumpHeld: false,
-            jumpBuffer: 0,
-            coyoteTime: 0,
-            dashCooldown: 0,
-            attackCooldown: 0,
-            currentPlatform: null,
-            standingStillTimer: 0,
-            isPlayer: true
-        };
+function updateBossKotomka(dt, zone){
+  const arenaMinX=zone.def.exitX-900, arenaMaxX=zone.def.exitX-80;
+  if(boss.hitFlash>0) boss.hitFlash-=dt;
+  if(boss.invuln>0) boss.invuln-=dt;
+  boss.ruleTimer -= dt;
+  boss.x += Math.sin(performance.now()/1400)*40*dt;
+  boss.x = clamp(boss.x, arenaMinX, arenaMaxX);
+  boss.y = zone.def.groundY - boss.h - 40 + Math.sin(performance.now()/700)*20;
+  if(boss.ruleTimer<=0){
+    boss.ruleTimer = rand(3.5,5);
+    const rule = pick(['gravity','shrink','shoot']);
+    if(rule==='gravity'){
+      gravityMult = gravityMult>0? -0.7 : 1;
+      queueBossLine('котомка: гравитация теперь моя.');
+      screenShake(8,0.3);
+    } else if(rule==='shrink'){
+      queueBossLine('котомка: платформы немного... подвинутся.');
+      for(const p of zone.platformInstances){ if(p.def.moving) p.phase = Math.random()*10; }
+    } else if(rule==='shoot'){
+      for(let i=-1;i<=1;i++) projectiles.push(new Projectile(boss.x+boss.w/2, boss.y+boss.h/2, i*160, -180, false));
+      queueBossLine('котомка: лови.');
     }
+  }
+  if(boss.hp<boss.maxHp*0.4 && !boss.enraged){ boss.enraged=true; gravityMult=1; queueBossLine('котомка: ладно. хватит игр.'); }
+  const pb={x:player.x,y:player.y,w:player.w,h:player.h};
+  const bb={x:boss.x,y:boss.y,w:boss.w,h:boss.h};
+  if(rectsOverlap(pb,bb) && player.invuln<=0) damagePlayer(12);
+  if(boss.dead){ gravityMult=1; finishBoss(); }
+}
 
-    function resetPlayer() {
-        const p = player;
-        p.vx = 0;
-        p.vy = 0;
-        p.dead = false;
-        p.attackTimer = 0;
-        p.dashTimer = 0;
-        p.invincible = 0;
-        p.hurtTimer = 0;
-        p.jumpPressed = false;
-        p.attackCooldown = 0;
-        p.dashCooldown = 0;
-        p.standingStillTimer = 0;
-        p.animFrame = 0;
-        p.walkCycle = 0;
+function updateBossFinal(dt, zone){
+  const arenaMinX=zone.def.exitX-900, arenaMaxX=zone.def.exitX-80;
+  boss.attackTimer-=dt; boss.minionTimer-=dt; boss.ruleTimer-=dt;
+  if(boss.hitFlash>0) boss.hitFlash-=dt;
+  if(boss.invuln>0) boss.invuln-=dt;
+  if(boss.hp<boss.maxHp*0.66 && boss.phase===1){ boss.phase=2; queueBossLine('ТИМБУЛ, ЗАЧЕМ ТЫ ЕЙ ВСЁ РАССКАЗАЛ?!'); }
+  if(boss.hp<boss.maxHp*0.33 && boss.phase===2){ boss.phase=3; queueBossLine('ХОРОШО. ХОРОШО. ПОСЛЕДНЯЯ ПОПЫТКА.'); }
+  boss.x += Math.sign(player.x-boss.x)*(boss.phase*35)*dt;
+  boss.x = clamp(boss.x, arenaMinX, arenaMaxX);
+  boss.y = zone.def.groundY - boss.h + Math.sin(performance.now()/600)*10;
+  if(boss.attackTimer<=0){
+    boss.attackTimer = 1.0 - boss.phase*0.15;
+    projectiles.push(new Projectile(boss.x+boss.w/2, boss.y+40, Math.sign(player.x-boss.x)*240, -60,false));
+  }
+  if(boss.phase>=2 && boss.minionTimer<=0){
+    boss.minionTimer=4;
+    const m = new Enemy({type: pick(['walker','jumper']), x: boss.x+rand(-150,150)});
+    m.groundY = zone.def.groundY-m.h; m.y=m.groundY;
+    zone.enemyInstances.push(m);
+  }
+  if(boss.phase>=3 && boss.ruleTimer<=0){
+    boss.ruleTimer=4;
+    gravityMult = gravityMult>0? -0.7:1;
+    queueBossLine('ТИМБУЛ: держись, Рэмилия. Уже недолго.');
+  }
+  const pb={x:player.x,y:player.y,w:player.w,h:player.h};
+  const bb={x:boss.x,y:boss.y,w:boss.w,h:boss.h};
+  if(rectsOverlap(pb,bb) && player.invuln<=0) damagePlayer(15);
+  if(boss.dead){ gravityMult=1; finishBoss(true); }
+}
+
+let bossLineQueue = [];
+function queueBossLine(text){
+  floatMessage(text, VW/2-80, 80);
+}
+
+function finishBoss(isFinal){
+  bossActive=false; bossDefeatedThisRun=true;
+  gameState='playing';
+  SFX.victory(); screenShake(12,0.5);
+  const zone = ZONES[currentZoneIndex];
+  if(!SAVE.progress.bossesDefeated.includes(zone.boss)) SAVE.progress.bossesDefeated.push(zone.boss);
+  spawnParticles(boss.x+boss.w/2, boss.y+boss.h/2, 40, {color:'#ffdf7a', minVY:-320, grav:600});
+  if(isFinal){
+    persistSave();
+    setTimeout(()=>{ showVictory(); }, 800);
+  } else {
+    persistSave();
+    projectiles = projectiles.filter(p=>true);
+    // после победы над боссом сразу открываем выход
+  }
+}
+
+function drawBoss(){
+  if(!boss) return;
+  const sx=boss.x-camera.x, sy=boss.y-camera.y;
+  ctx.save();
+  if(boss.hitFlash>0) ctx.filter='brightness(2)';
+  if(boss.id==='ilya'){
+    ctx.fillStyle = boss.phase===3?'#b71c1c':'#5d4037';
+    ctx.fillRect(sx,sy,boss.w,boss.h);
+    ctx.fillStyle='#fff';
+    ctx.fillRect(sx+15,sy+20,14,14); ctx.fillRect(sx+boss.w-29,sy+20,14,14);
+    ctx.fillStyle='#000';
+    ctx.fillRect(sx+20,sy+25,6,6); ctx.fillRect(sx+boss.w-24,sy+25,6,6);
+  } else if(boss.id==='sisters'){
+    if(boss.kira.alive){
+      const kx=boss.kira.x-camera.x, ky=boss.kira.y-camera.y;
+      ctx.fillStyle='#42a5f5'; ctx.fillRect(kx,ky,50,50);
+      ctx.fillStyle='#fff'; ctx.fillRect(kx+10,ky+15,8,8); ctx.fillRect(kx+32,ky+15,8,8);
     }
-
-    // ==================== LEVEL DATA ====================
-    function getZoneData(zone) {
-        const zones = {
-            1: {
-                name: 'СМАКОГРАД',
-                platforms: [
-                    { x: 0, y: 650, w: 400, h: 61, type: 'ground', color: '#4a7a4a' },
-                    { x: 0, y: 580, w: 80, h: 20, type: 'platform', color: '#5a8a5a' },
-                    { x: 140, y: 540, w: 70, h: 18, type: 'platform', color: '#5a8a5a' },
-                    { x: 260, y: 500, w: 80, h: 18, type: 'platform', color: '#5a8a5a' },
-                    { x: 120, y: 440, w: 60, h: 18, type: 'platform', color: '#5a8a5a' },
-                    { x: 220, y: 390, w: 70, h: 18, type: 'platform', color: '#5a8a5a' },
-                    { x: 0, y: 340, w: 90, h: 18, type: 'platform', color: '#5a8a5a' },
-                    { x: 150, y: 290, w: 70, h: 18, type: 'platform', color: '#5a8a5a' },
-                    { x: 260, y: 230, w: 80, h: 18, type: 'platform', color: '#5a8a5a' },
-                    { x: 100, y: 170, w: 60, h: 18, type: 'platform', color: '#5a8a5a' },
-                    { x: 200, y: 100, w: 80, h: 18, type: 'platform', color: '#5a8a5a' },
-                    { x: 0, y: 50, w: 100, h: 18, type: 'platform', color: '#5a8a5a' },
-                ],
-                enemies: [
-                    { type: 'walker', x: 200, y: 630, patrolMin: 150, patrolMax: 280, speed: 0.8, color: '#ff6b6b', hp: 2, w: 20, h: 24 },
-                    { type: 'walker', x: 320, y: 600, patrolMin: 280, patrolMax: 380, speed: 1.0, color: '#ff6b6b', hp: 2, w: 20, h: 24 },
-                    { type: 'flyer', x: 180, y: 400, patrolMin: 140, patrolMax: 240, speed: 1.2, color: '#ffa500', hp: 1, w: 18, h: 18 },
-                    { type: 'spitter', x: 300, y: 450, patrolMin: 250, patrolMax: 350, speed: 0.5, color: '#ff0080', hp: 2, w: 22, h: 24 },
-                ],
-                collectibles: [
-                    { x: 155, y: 520, type: 'coin', collected: false },
-                    { x: 275, y: 480, type: 'coin', collected: false },
-                    { x: 135, y: 420, type: 'coin', collected: false },
-                    { x: 235, y: 370, type: 'coin', collected: false },
-                    { x: 20, y: 320, type: 'secret', collected: false, secretId: 'z1_secret1' },
-                    { x: 165, y: 270, type: 'coin', collected: false },
-                    { x: 275, y: 210, type: 'coin', collected: false },
-                    { x: 115, y: 150, type: 'coin', collected: false },
-                    { x: 215, y: 80, type: 'coin', collected: false },
-                ],
-                checkpoints: [
-                    { x: 300, y: 500, id: 'cp1' },
-                ],
-                bossTrigger: { x: 330, y: 90, w: 30, h: 30, boss: 'bacteria', zone: 1 },
-                exitPoint: { x: 380, y: 40, w: 20, h: 30, nextZone: 2 },
-                timbulSpot: { x: 50, y: 600, w: 40, h: 50, message: 'Тимбул: Что-то тут пахнет смаком...' },
-                npcDialogues: [
-                    { x: 80, y: 600, w: 30, h: 40, text: 'NPC: Смакоград — лучший город в мире!' },
-                    { x: 250, y: 550, w: 30, h: 40, text: 'NPC: Ты уже видела Тимбула? Он сегодня опять странный.' },
-                ]
-            },
-            2: {
-                name: 'МАЛАЯ ТОКМАЧКА',
-                platforms: [
-                    { x: 0, y: 650, w: 400, h: 61, type: 'ground', color: '#6a5a4a' },
-                    { x: 50, y: 570, w: 70, h: 18, type: 'moving', color: '#7a6a5a', moveX: 0, moveY: 30, moveSpeed: 0.015, moveOffset: 0 },
-                    { x: 150, y: 520, w: 60, h: 18, type: 'platform', color: '#7a6a5a' },
-                    { x: 230, y: 470, w: 70, h: 18, type: 'moving', color: '#7a6a5a', moveX: 0, moveY: -30, moveSpeed: 0.015, moveOffset: Math.PI },
-                    { x: 100, y: 400, w: 60, h: 18, type: 'platform', color: '#7a6a5a' },
-                    { x: 200, y: 340, w: 70, h: 18, type: 'platform', color: '#7a6a5a' },
-                    { x: 80, y: 280, w: 60, h: 18, type: 'moving', color: '#7a6a5a', moveX: 0, moveY: 25, moveSpeed: 0.02, moveOffset: Math.PI / 2 },
-                    { x: 180, y: 220, w: 70, h: 18, type: 'platform', color: '#7a6a5a' },
-                    { x: 280, y: 160, w: 60, h: 18, type: 'platform', color: '#7a6a5a' },
-                    { x: 100, y: 100, w: 70, h: 18, type: 'platform', color: '#7a6a5a' },
-                ],
-                enemies: [
-                    { type: 'walker', x: 150, y: 630, patrolMin: 100, patrolMax: 200, speed: 1.0, color: '#ff6b6b', hp: 2, w: 20, h: 24 },
-                    { type: 'walker', x: 300, y: 580, patrolMin: 260, patrolMax: 360, speed: 1.2, color: '#ff6b6b', hp: 2, w: 20, h: 24 },
-                    { type: 'flyer', x: 180, y: 380, patrolMin: 140, patrolMax: 250, speed: 1.4, color: '#ffa500', hp: 2, w: 18, h: 18 },
-                    { type: 'flyer', x: 100, y: 260, patrolMin: 60, patrolMax: 160, speed: 1.1, color: '#ffa500', hp: 2, w: 18, h: 18 },
-                    { type: 'spitter', x: 250, y: 400, patrolMin: 200, patrolMax: 320, speed: 0.6, color: '#ff0080', hp: 2, w: 22, h: 24 },
-                ],
-                collectibles: [
-                    { x: 65, y: 550, type: 'coin', collected: false },
-                    { x: 165, y: 500, type: 'coin', collected: false },
-                    { x: 245, y: 450, type: 'coin', collected: false },
-                    { x: 115, y: 380, type: 'coin', collected: false },
-                    { x: 215, y: 320, type: 'secret', collected: false, secretId: 'z2_secret1' },
-                    { x: 95, y: 260, type: 'coin', collected: false },
-                    { x: 195, y: 200, type: 'coin', collected: false },
-                    { x: 295, y: 140, type: 'coin', collected: false },
-                    { x: 115, y: 80, type: 'coin', collected: false },
-                ],
-                checkpoints: [
-                    { x: 240, y: 470, id: 'cp2' },
-                ],
-                bossTrigger: { x: 300, y: 150, w: 30, h: 30, boss: 'bacteria', zone: 2 },
-                exitPoint: { x: 380, y: 40, w: 20, h: 30, nextZone: 3 },
-                timbulSpot: { x: 20, y: 580, w: 40, h: 50, message: 'Тимбул: В Малой Токмачке всегда как-то... тесно.' },
-                npcDialogues: [
-                    { x: 60, y: 600, w: 30, h: 40, text: 'NPC: Слышала про Дэдлайн-машину? Она реальна!' },
-                    { x: 280, y: 560, w: 30, h: 40, text: 'NPC: Тимбул был здесь вчера. Или позавчера. Или завтра.' },
-                ]
-            },
-            3: {
-                name: 'ДЭДЛАЙН-МАШИНА',
-                platforms: [
-                    { x: 0, y: 650, w: 400, h: 61, type: 'ground', color: '#3a3a5a' },
-                    { x: 30, y: 570, w: 70, h: 18, type: 'platform', color: '#4a4a6a' },
-                    { x: 120, y: 510, w: 60, h: 18, type: 'moving', color: '#4a4a6a', moveX: 0, moveY: 25, moveSpeed: 0.018, moveOffset: 0 },
-                    { x: 220, y: 450, w: 70, h: 18, type: 'platform', color: '#4a4a6a' },
-                    { x: 80, y: 380, w: 60, h: 18, type: 'moving', color: '#4a4a6a', moveX: 0, moveY: -25, moveSpeed: 0.02, moveOffset: Math.PI },
-                    { x: 180, y: 320, w: 70, h: 18, type: 'platform', color: '#4a4a6a' },
-                    { x: 260, y: 250, w: 60, h: 18, type: 'moving', color: '#4a4a6a', moveX: 0, moveY: 20, moveSpeed: 0.022, moveOffset: Math.PI / 2 },
-                    { x: 100, y: 190, w: 70, h: 18, type: 'platform', color: '#4a4a6a' },
-                    { x: 200, y: 120, w: 60, h: 18, type: 'platform', color: '#4a4a6a' },
-                    { x: 300, y: 60, w: 70, h: 18, type: 'platform', color: '#4a4a6a' },
-                ],
-                enemies: [
-                    { type: 'walker', x: 200, y: 630, patrolMin: 150, patrolMax: 280, speed: 1.1, color: '#ff6b6b', hp: 3, w: 20, h: 24 },
-                    { type: 'walker', x: 350, y: 580, patrolMin: 300, patrolMax: 380, speed: 1.3, color: '#ff6b6b', hp: 3, w: 20, h: 24 },
-                    { type: 'flyer', x: 150, y: 400, patrolMin: 100, patrolMax: 220, speed: 1.5, color: '#ffa500', hp: 2, w: 18, h: 18 },
-                    { type: 'flyer', x: 220, y: 300, patrolMin: 180, patrolMax: 280, speed: 1.6, color: '#ffa500', hp: 2, w: 18, h: 18 },
-                    { type: 'spitter', x: 300, y: 380, patrolMin: 250, patrolMax: 360, speed: 0.7, color: '#ff0080', hp: 3, w: 22, h: 24 },
-                    { type: 'spitter', x: 80, y: 200, patrolMin: 40, patrolMax: 140, speed: 0.8, color: '#ff0080', hp: 3, w: 22, h: 24 },
-                ],
-                collectibles: [
-                    { x: 45, y: 550, type: 'coin', collected: false },
-                    { x: 135, y: 490, type: 'coin', collected: false },
-                    { x: 235, y: 430, type: 'coin', collected: false },
-                    { x: 95, y: 360, type: 'secret', collected: false, secretId: 'z3_secret1' },
-                    { x: 195, y: 300, type: 'coin', collected: false },
-                    { x: 275, y: 230, type: 'coin', collected: false },
-                    { x: 115, y: 170, type: 'coin', collected: false },
-                    { x: 215, y: 100, type: 'coin', collected: false },
-                    { x: 315, y: 40, type: 'coin', collected: false },
-                ],
-                checkpoints: [
-                    { x: 230, y: 450, id: 'cp3' },
-                ],
-                bossTrigger: { x: 300, y: 50, w: 30, h: 30, boss: 'bacteria', zone: 3 },
-                exitPoint: { x: 380, y: 40, w: 20, h: 30, nextZone: 4 },
-                timbulSpot: { x: 10, y: 550, w: 40, h: 50, message: 'Тимбул: Дэдлайн-машина уже знает, что ты придёшь.' },
-                npcDialogues: [
-                    { x: 50, y: 600, w: 30, h: 40, text: 'NPC: Время здесь течёт иначе. Или это только мне кажется?' },
-                    { x: 150, y: 540, w: 30, h: 40, text: 'NPC: Тимбул сказал, что ты уже была здесь. Но ты ведь только пришла?' },
-                ]
-            },
-            4: {
-                name: 'ЗОНА КОТОМКИ',
-                platforms: [
-                    { x: 0, y: 650, w: 400, h: 61, type: 'ground', color: '#3a5a3a' },
-                    { x: 50, y: 570, w: 60, h: 18, type: 'moving', color: '#4a6a4a', moveX: 20, moveY: 0, moveSpeed: 0.015, moveOffset: 0 },
-                    { x: 150, y: 520, w: 60, h: 18, type: 'platform', color: '#4a6a4a' },
-                    { x: 240, y: 460, w: 60, h: 18, type: 'moving', color: '#4a6a4a', moveX: -15, moveY: 0, moveSpeed: 0.018, moveOffset: Math.PI },
-                    { x: 100, y: 390, w: 60, h: 18, type: 'platform', color: '#4a6a4a' },
-                    { x: 200, y: 330, w: 60, h: 18, type: 'moving', color: '#4a6a4a', moveX: 25, moveY: 0, moveSpeed: 0.02, moveOffset: Math.PI / 2 },
-                    { x: 80, y: 260, w: 60, h: 18, type: 'platform', color: '#4a6a4a' },
-                    { x: 180, y: 200, w: 60, h: 18, type: 'moving', color: '#4a6a4a', moveX: -20, moveY: 0, moveSpeed: 0.022, moveOffset: 0 },
-                    { x: 280, y: 140, w: 60, h: 18, type: 'platform', color: '#4a6a4a' },
-                    { x: 100, y: 70, w: 60, h: 18, type: 'platform', color: '#4a6a4a' },
-                ],
-                enemies: [
-                    { type: 'walker', x: 180, y: 630, patrolMin: 130, patrolMax: 240, speed: 1.2, color: '#ff6b6b', hp: 3, w: 20, h: 24 },
-                    { type: 'walker', x: 320, y: 580, patrolMin: 280, patrolMax: 370, speed: 1.4, color: '#ff6b6b', hp: 3, w: 20, h: 24 },
-                    { type: 'flyer', x: 130, y: 400, patrolMin: 80, patrolMax: 200, speed: 1.7, color: '#ffa500', hp: 3, w: 18, h: 18 },
-                    { type: 'flyer', x: 230, y: 300, patrolMin: 180, patrolMax: 300, speed: 1.8, color: '#ffa500', hp: 3, w: 18, h: 18 },
-                    { type: 'spitter', x: 300, y: 400, patrolMin: 250, patrolMax: 360, speed: 0.8, color: '#ff0080', hp: 3, w: 22, h: 24 },
-                    { type: 'spitter', x: 150, y: 250, patrolMin: 100, patrolMax: 220, speed: 0.9, color: '#ff0080', hp: 3, w: 22, h: 24 },
-                ],
-                collectibles: [
-                    { x: 65, y: 550, type: 'coin', collected: false },
-                    { x: 165, y: 500, type: 'coin', collected: false },
-                    { x: 255, y: 440, type: 'coin', collected: false },
-                    { x: 115, y: 370, type: 'secret', collected: false, secretId: 'z4_secret1' },
-                    { x: 215, y: 310, type: 'coin', collected: false },
-                    { x: 95, y: 240, type: 'coin', collected: false },
-                    { x: 195, y: 180, type: 'coin', collected: false },
-                    { x: 295, y: 120, type: 'coin', collected: false },
-                    { x: 115, y: 50, type: 'coin', collected: false },
-                ],
-                checkpoints: [
-                    { x: 250, y: 460, id: 'cp4' },
-                ],
-                bossTrigger: { x: 300, y: 60, w: 30, h: 30, boss: 'bacteria', zone: 4 },
-                exitPoint: { x: 380, y: 40, w: 20, h: 30, nextZone: 5 },
-                timbulSpot: { x: 30, y: 580, w: 40, h: 50, message: 'Тимбул: Котомка видит твои сны. И не только твои.' },
-                npcDialogues: [
-                    { x: 70, y: 600, w: 30, h: 40, text: 'NPC: Здесь всё не то, чем кажется. Особенно Тимбул.' },
-                    { x: 280, y: 550, w: 30, h: 40, text: 'NPC: Я уже видел это место во сне. И тебя тоже.' },
-                ]
-            },
-            5: {
-                name: 'ФИНАЛЬНАЯ ЗОНА',
-                platforms: [
-                    { x: 0, y: 650, w: 400, h: 61, type: 'ground', color: '#2a2a4a' },
-                    { x: 20, y: 570, w: 70, h: 18, type: 'platform', color: '#3a3a5a' },
-                    { x: 120, y: 510, w: 60, h: 18, type: 'moving', color: '#3a3a5a', moveX: 0, moveY: 20, moveSpeed: 0.02, moveOffset: 0 },
-                    { x: 220, y: 440, w: 70, h: 18, type: 'platform', color: '#3a3a5a' },
-                    { x: 80, y: 370, w: 60, h: 18, type: 'moving', color: '#3a3a5a', moveX: 0, moveY: -20, moveSpeed: 0.022, moveOffset: Math.PI },
-                    { x: 180, y: 300, w: 70, h: 18, type: 'platform', color: '#3a3a5a' },
-                    { x: 280, y: 230, w: 60, h: 18, type: 'moving', color: '#3a3a5a', moveX: 0, moveY: 15, moveSpeed: 0.025, moveOffset: Math.PI / 2 },
-                    { x: 100, y: 160, w: 70, h: 18, type: 'platform', color: '#3a3a5a' },
-                    { x: 200, y: 90, w: 60, h: 18, type: 'platform', color: '#3a3a5a' },
-                    { x: 300, y: 30, w: 70, h: 18, type: 'platform', color: '#3a3a5a' },
-                ],
-                enemies: [
-                    { type: 'walker', x: 150, y: 630, patrolMin: 100, patrolMax: 220, speed: 1.5, color: '#ff4444', hp: 4, w: 20, h: 24 },
-                    { type: 'walker', x: 350, y: 580, patrolMin: 300, patrolMax: 380, speed: 1.6, color: '#ff4444', hp: 4, w: 20, h: 24 },
-                    { type: 'flyer', x: 180, y: 350, patrolMin: 140, patrolMax: 240, speed: 2.0, color: '#ff8800', hp: 3, w: 18, h: 18 },
-                    { type: 'flyer', x: 250, y: 250, patrolMin: 200, patrolMax: 320, speed: 2.1, color: '#ff8800', hp: 3, w: 18, h: 18 },
-                    { type: 'spitter', x: 300, y: 400, patrolMin: 250, patrolMax: 360, speed: 1.0, color: '#ff00ff', hp: 4, w: 22, h: 24 },
-                    { type: 'spitter', x: 120, y: 200, patrolMin: 60, patrolMax: 180, speed: 1.1, color: '#ff00ff', hp: 4, w: 22, h: 24 },
-                ],
-                collectibles: [
-                    { x: 40, y: 550, type: 'coin', collected: false },
-                    { x: 140, y: 490, type: 'coin', collected: false },
-                    { x: 240, y: 420, type: 'coin', collected: false },
-                    { x: 95, y: 350, type: 'secret', collected: false, secretId: 'z5_secret1' },
-                    { x: 195, y: 280, type: 'coin', collected: false },
-                    { x: 295, y: 210, type: 'coin', collected: false },
-                    { x: 115, y: 140, type: 'coin', collected: false },
-                    { x: 215, y: 70, type: 'coin', collected: false },
-                ],
-                checkpoints: [
-                    { x: 230, y: 440, id: 'cp5' },
-                ],
-                bossTrigger: { x: 300, y: 20, w: 30, h: 30, boss: 'final', zone: 5 },
-                exitPoint: null,
-                timbulSpot: { x: 10, y: 550, w: 40, h: 50, message: 'Тимбул: Всё заканчивается там, где началось.' },
-                npcDialogues: [
-                    { x: 50, y: 600, w: 30, h: 40, text: 'NPC: Ты уже поняла, да? Всё это время...' },
-                    { x: 150, y: 540, w: 30, h: 40, text: 'NPC: Тимбул не тот, за кого себя выдаёт.' },
-                ]
-            }
-        };
-        return zones[zone] || zones[1];
+    if(boss.reva.alive){
+      const rx=boss.reva.x-camera.x, ry=boss.reva.y-camera.y;
+      ctx.fillStyle='#ef5350'; ctx.fillRect(rx,ry,50,50);
+      ctx.fillStyle='#fff'; ctx.fillRect(rx+10,ry+15,8,8); ctx.fillRect(rx+32,ry+15,8,8);
     }
+  } else if(boss.id==='kotomka' || boss.id==='kotomkaFinalPrep'){
+    ctx.fillStyle='#6a1b9a';
+    ctx.beginPath(); ctx.ellipse(sx+boss.w/2, sy+boss.h/2, boss.w/2, boss.h/2,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fff';
+    for(let i=0;i<3;i++){ ctx.fillRect(sx+20+i*20, sy+40, 6,10); }
+  } else if(boss.id==='final'){
+    ctx.fillStyle = boss.phase===3?'#000':'#4a0e4e';
+    ctx.fillRect(sx,sy,boss.w,boss.h);
+    ctx.fillStyle='#ff2f8f';
+    ctx.fillRect(sx+20,sy+30,18,18); ctx.fillRect(sx+boss.w-38,sy+30,18,18);
+  }
+  ctx.restore();
 
-    function loadZone(zoneNum) {
-        const data = getZoneData(zoneNum);
-        if (!data) return;
-        currentZone = zoneNum;
-        currentZoneName = zoneNames[zoneNum] || 'ЗОНА';
-        platforms = data.platforms.map(p => ({
-            ...p,
-            origX: p.x,
-            origY: p.y,
-            moveTimer: p.moveOffset || 0,
-            moveX: p.moveX || 0,
-            moveY: p.moveY || 0,
-            moveSpeed: p.moveSpeed || 0,
-            moveOffset: p.moveOffset || 0,
-            type: p.type || 'platform'
-        }));
-        enemies = data.enemies.map(e => ({
-            ...e,
-            origX: e.x,
-            origY: e.y,
-            patrolMin: e.patrolMin || e.x - 30,
-            patrolMax: e.patrolMax || e.x + 30,
-            patrolDir: 1,
-            animTimer: 0,
-            attackTimer: 0,
-            hp: e.hp || 2,
-            maxHp: e.hp || 2,
-            dead: false,
-            vx: 0,
-            vy: 0,
-            invincible: 0
-        }));
-        collectibles = data.collectibles.map(c => ({
-            ...c,
-            collected: secretsFound.includes(c.secretId || '') || (c.type === 'coin' && false)
-        }));
-        checkpoints = data.checkpoints || [];
-        npcDialogues = data.npcDialogues || [];
-        timbulLocations = [data.timbulSpot].filter(Boolean);
-        activeBoss = null;
-        bossDefeated = false;
-        bossIntroActive = false;
-        bossIntroTimer = 0;
-        finalSequenceActive = false;
-        finalTimbulReveal = false;
-        if (data.bossTrigger && defeatedBosses.includes(data.bossTrigger.boss + '_' + zoneNum)) {
-            data.bossTrigger.defeated = true;
-        }
-        if (!player) {
-            const spawnX = currentCheckpoint ? currentCheckpoint.x : 30;
-            const spawnY = currentCheckpoint ? currentCheckpoint.y - 20 : 620;
-            player = createPlayer(spawnX, spawnY);
-        } else {
-            if (currentCheckpoint) {
-                player.x = currentCheckpoint.x;
-                player.y = currentCheckpoint.y - 20;
-            } else {
-                player.x = 30;
-                player.y = 620;
-            }
-            resetPlayer();
-        }
-        AudioSys.startMusic('zone' + zoneNum);
-        transitionAlpha = 1;
-        transitionType = 'fade_in';
-        zoneTransitionTimer = 0;
-        gameState = 'playing';
+  // HP бар босса
+  ctx.fillStyle='rgba(0,0,0,0.6)';
+  ctx.fillRect(20,20,VW-40,14);
+  ctx.fillStyle='#ff4757';
+  ctx.fillRect(22,22, (VW-44)*clamp(boss.hp/boss.maxHp,0,1),10);
+  ctx.fillStyle='#fff'; ctx.font='10px Verdana'; ctx.textAlign='center';
+  ctx.fillText(boss.name, VW/2, 32);
+}
+
+function updateBoss(dt, zone){
+  if(!bossActive || !boss) return;
+  if(boss.id==='ilya') updateBossIlya(dt, zone);
+  else if(boss.id==='sisters') updateBossSisters(dt, zone);
+  else if(boss.id==='kotomka' || boss.id==='kotomkaFinalPrep') updateBossKotomka(dt, zone);
+  else if(boss.id==='final') updateBossFinal(dt, zone);
+}
+
+/* ============================================================
+   ДИАЛОГИ
+============================================================ */
+const dlgBox = document.getElementById('dialogueBox');
+const dlgSpeaker = document.getElementById('dlgSpeaker');
+const dlgText = document.getElementById('dlgText');
+let dialogueQueue = [];
+let dialogueActive = false;
+let dialogueCallback = null;
+let prevGameStateBeforeDialogue = null;
+
+function showDialogueSequence(lines, callback){
+  dialogueQueue = lines.slice();
+  dialogueCallback = callback||null;
+  if(gameState!=='dialogue'){ prevGameStateBeforeDialogue = gameState; }
+  gameState='dialogue';
+  dlgBox.style.display='block';
+  advanceDialogue();
+}
+function advanceDialogue(){
+  if(dialogueQueue.length===0){
+    dlgBox.style.display='none';
+    gameState = prevGameStateBeforeDialogue || 'playing';
+    if(dialogueCallback) dialogueCallback();
+    return;
+  }
+  const line = dialogueQueue.shift();
+  dlgSpeaker.textContent = line.sp;
+  dlgText.textContent = line.tx;
+  SFX.ui();
+}
+dlgBox.addEventListener('click', advanceDialogue);
+dlgBox.addEventListener('touchstart', e=>{ e.preventDefault(); advanceDialogue(); }, {passive:false});
+
+/* ============================================================
+   МЕМНАЯ КНОПКА
+============================================================ */
+const MEME_EFFECTS = [
+  ()=>{ // крик
+    floatMessage('РЭМИЛИЯ ОРЁТ ВО ВСЮ ГЛОТКУ', player.x-camera.x-30, player.y-camera.y-40);
+    beep(150,0.5,'sawtooth',0.25,900); screenShake(8,0.3); vibrate(80);
+  },
+  ()=>{ // Тимбул на секунду
+    floatMessage('...появляется Тимбул. И сразу исчезает.', VW/2-100, 100);
+    spawnParticles(player.x+50, player.y-20, 12, {color:'#c9a7ff'});
+  },
+  ()=>{ // предмет улетает
+    floatMessage('какой-то предмет улетает в закат', player.x-camera.x, player.y-camera.y-60);
+    spawnParticles(player.x, player.y, 8, {color:'#ffd166', minVY:-400, maxVY:-300});
+  },
+  ()=>{ // музыка резко меняется
+    floatMessage('музыка внезапно меняется!', VW/2-90, 120);
+    const keys = Object.keys(MUSIC_PATTERNS);
+    startMusic(pick(keys));
+  },
+  ()=>{ // экран трясётся
+    floatMessage('экран слегка трясётся от возмущения', VW/2-110, 140);
+    screenShake(14,0.5);
+  },
+  ()=>{ // редкая пасхалка про Илью Боктерию
+    floatMessage('Илья Боктерия (издалека): Я ТОЖЕ ЭТО СЛЫШАЛ!', VW/2-140, 60);
+  },
+  ()=>{ // ярость мгновенно
+    addRage(30);
+    floatMessage('ярость Рэмилии подскочила!', player.x-camera.x-20, player.y-camera.y-40);
+  },
+  ()=>{ // Котомка комментирует
+    floatMessage('Котомка (шёпотом): не нажимай эту кнопку так часто.', VW/2-150, 90);
+  },
+];
+function triggerMeme(){
+  if(memeCooldown>0) return;
+  ensureAudio();
+  memeCooldown = MEME_COOLDOWN_MAX;
+  SFX.meme();
+  pick(MEME_EFFECTS)();
+}
+
+/* ============================================================
+   СБОР УРОВНЯ
+============================================================ */
+let currentZoneIndex = 0;
+let zoneState = null; // {platformInstances, enemyInstances, collectibleInstances, checkpointX, ...}
+let gameState = 'menu'; // menu, settings, playing, dialogue, boss, paused, gameover, victory
+let lastRespawnX = 60, lastRespawnY = 400;
+
+function buildZone(idx){
+  const def = ZONES[idx];
+  const platformInstances = def.platforms.map(p=>({def:p, x:p.x, y:p.y, w:p.w, h:p.h, phase:Math.random()*10}));
+  const enemyInstances = def.enemies.map(e=>{
+    const en = new Enemy(e);
+    en.groundY = def.groundY - en.h;
+    en.y = en.groundY;
+    return en;
+  });
+  const collectibleInstances = def.collectibles.map(c=>({...c, taken:false}));
+  const dialoguesRemaining = def.dialogues? def.dialogues.filter(d=> !SAVE.progress.seenDialogues.includes(d.id)) : [];
+  zoneState = {
+    def, platformInstances, enemyInstances, collectibleInstances,
+    dialoguesRemaining, bossTriggered:false,
+  };
+  projectiles = [];
+  boss=null; bossActive=false;
+  gravityMult=1;
+  player.x = 60; player.y = def.groundY-60; player.vx=0; player.vy=0;
+  lastRespawnX=60; lastRespawnY=def.groundY-60;
+  resetPlayerStats();
+  camera.x=0; camera.y=0;
+  startMusic(def.musicKey);
+  document.getElementById('zoneLabel').textContent = def.name;
+}
+
+function updatePlatform(p, dt){
+  const m = p.def.moving;
+  if(!m) return;
+  p.phase += dt*m.speed*0.02;
+  if(m.axis==='x'){ p.x = p.def.x + Math.sin(p.phase)*m.range; }
+  else { p.y = p.def.y + Math.sin(p.phase)*m.range; }
+}
+
+/* ============================================================
+   ФИЗИКА ИГРОКА
+============================================================ */
+function updatePlayer(dt, zone){
+  if(player.state==='dead'){ return; }
+  if(player.state==='victory'){ player.animT+=dt; return; }
+
+  if(player.invuln>0) player.invuln-=dt;
+  if(player.hurtFlash>0) player.hurtFlash-=dt;
+  if(player.dashCooldown>0) player.dashCooldown-=dt;
+
+  let idle = true;
+  const isHurtLock = player.state==='hurt' && player.stateTimer>0;
+  if(isHurtLock){ player.stateTimer-=dt; }
+
+  if(player.dashTimer>0){
+    player.dashTimer -= dt;
+    player.vx = player.facing*DASH_SPEED;
+    player.vy = 0;
+    idle=false;
+    spawnParticles(player.x+player.w/2, player.y+player.h/2, 1, {color:'#ff5fa2', minVY:-20,maxVY:20,minVX:-20,maxVX:20,grav:0});
+    if(player.dashTimer<=0){ player.state='idle'; }
+  } else if(!isHurtLock){
+    let moveX=0;
+    if(inputLeft()){ moveX=-1; player.facing=-1; idle=false; }
+    if(inputRight()){ moveX=1; player.facing=1; idle=false; }
+    player.vx = moveX*MOVE_SPEED;
+
+    if(inputJumpPressed() && player.onGround && player._jumpLock!==true){
+      player.vy = JUMP_VELOCITY; player.onGround=false; SFX.jump(); vibrate(15);
+      player._jumpLock=true; idle=false;
     }
+    if(!inputJumpPressed()) player._jumpLock=false;
 
-    // ==================== BOSSES ====================
-    function startBoss(bossId, zoneNum) {
-        const bossData = {
-            'bacteria': {
-                name: 'ИЛЬЯ БОКТЕРИЯ',
-                maxHp: 12,
-                color: '#4aa04a',
-                phases: [
-                    { name: 'Фаза 1: Микробный Поток', hpThreshold: 1.0 },
-                    { name: 'Фаза 2: Антибиотик-Ярость', hpThreshold: 0.5 },
-                    { name: 'Фаза 3: Пандемия', hpThreshold: 0.25 }
-                ],
-                attacks: ['spawn_minions', 'charge', 'projectile_barrage'],
-                quotes: [
-                    'Илья Боктерия: Ты не пройдёшь! У меня иммунитет к поражению!',
-                    'Илья Боктерия: Мои бактерии съедят твой прогресс!',
-                    'Илья Боктерия: Сдавайся, пока я не мутировал ещё сильнее!'
-                ]
-            },
-            'sisters': {
-                name: 'СЁСТРЫ КИРА И РЕВА',
-                maxHp: 14,
-                color: '#aa4a6a',
-                phases: [
-                    { name: 'Фаза 1: Двойная Атака', hpThreshold: 1.0 },
-                    { name: 'Фаза 2: Разделение', hpThreshold: 0.5 },
-                    { name: 'Фаза 3: Хаос Сестёр', hpThreshold: 0.25 }
-                ],
-                attacks: ['platform_shift', 'double_projectile', 'confuse'],
-                quotes: [
-                    'Кира: Ты одна, а нас двое!',
-                    'Рева: И мы не всегда ладим!',
-                    'Кира и Рева: Но вместе мы непобедимы!'
-                ]
-            },
-            'catomka': {
-                name: 'КОТОМКА',
-                maxHp: 16,
-                color: '#7a5a3a',
-                phases: [
-                    { name: 'Фаза 1: Котомка-Форм', hpThreshold: 1.0 },
-                    { name: 'Фаза 2: Гравитационный Сбой', hpThreshold: 0.5 },
-                    { name: 'Фаза 3: Полный Хаос', hpThreshold: 0.25 }
-                ],
-                attacks: ['gravity_flip', 'platform_shuffle', 'void_pull'],
-                quotes: [
-                    'Котомка: Ты не знаешь, что такое хаос.',
-                    'Котомка: Я — воплощение твоего страха.',
-                    'Котомка: Всё, что ты видишь, может исчезнуть.'
-                ]
-            },
-            'final': {
-                name: 'ТИМБУЛ (ИСТИННАЯ ФОРМА)',
-                maxHp: 20,
-                color: '#6666cc',
-                phases: [
-                    { name: 'Фаза 1: Воспоминания', hpThreshold: 1.0 },
-                    { name: 'Фаза 2: Правда', hpThreshold: 0.5 },
-                    { name: 'Фаза 3: Принятие', hpThreshold: 0.25 }
-                ],
-                attacks: ['memory_shard', 'reality_break', 'timbul_wave'],
-                quotes: [
-                    'Тимбул: Ты знала. Всегда знала.',
-                    'Тимбул: Я был тобой. А ты — мной.',
-                    'Тимбул: Это не битва. Это прощание.'
-                ]
-            }
-        };
-
-        const bd = bossData[bossId];
-        if (!bd) return;
-        activeBoss = {
-            id: bossId,
-            name: bd.name,
-            maxHp: bd.maxHp,
-            hp: bd.maxHp,
-            color: bd.color,
-            phases: bd.phases,
-            attacks: bd.attacks,
-            quotes: bd.quotes,
-            x: 320,
-            y: 300,
-            w: 40,
-            h: 40,
-            phaseIndex: 0,
-            attackTimer: 0,
-            attackPattern: 0,
-            minions: [],
-            projectiles: [],
-            stateTimer: 0,
-            state: 'idle',
-            defeated: false,
-            hitFlash: 0,
-            animTimer: 0,
-            orbitAngle: 0,
-            platformShiftTimer: 0,
-            gravityFlipTimer: 0,
-            memoryShards: [],
-            voidPullTimer: 0
-        };
-        bossHealth = bd.maxHp;
-        bossMaxHealth = bd.maxHp;
-        bossNameDisplay = bd.name;
-        bossDefeated = false;
-        bossIntroActive = true;
-        bossIntroTimer = 120;
-        bossPhaseIndex = 0;
-        bossAttackTimer = 0;
-        bossAttackPattern = 0;
-        gameState = 'boss';
-        AudioSys.sfx('boss');
-        AudioSys.startMusic('boss');
-        setTimeout(() => {
-            if (activeBoss && !bossDefeated && gameState === 'boss') {
-                showDialogue(bd.quotes[0]);
-            }
-        }, 500);
+    if(inputDashPressed() && player.dashCooldown<=0 && player.dashTimer<=0 && player._dashLock!==true){
+      player.dashTimer = DASH_TIME; player.dashCooldown=DASH_COOLDOWN_MAX;
+      player.invuln = Math.max(player.invuln, DASH_TIME+0.05);
+      SFX.dash(); player._dashLock=true; idle=false;
     }
+    if(!inputDashPressed()) player._dashLock=false;
 
-    function updateBoss() {
-        if (!activeBoss || bossDefeated) return;
-        const boss = activeBoss;
-        boss.animTimer += 0.05;
-        boss.orbitAngle += 0.03;
-        if (boss.hitFlash > 0) boss.hitFlash--;
-
-        // Phase transition
-        const hpRatio = boss.hp / boss.maxHp;
-        if (hpRatio <= 0.5 && boss.phaseIndex === 0) {
-            boss.phaseIndex = 1;
-            bossIntroActive = true;
-            bossIntroTimer = 90;
-            bossNameDisplay = boss.phases[1].name;
-            AudioSys.sfx('boss');
-            if (boss.quotes[1]) showDialogue(boss.quotes[1]);
-            if (boss.id === 'bacteria') spawnMinions(3);
-        } else if (hpRatio <= 0.25 && boss.phaseIndex === 1) {
-            boss.phaseIndex = 2;
-            bossIntroActive = true;
-            bossIntroTimer = 90;
-            bossNameDisplay = boss.phases[2].name;
-            AudioSys.sfx('boss');
-            if (boss.quotes[2]) showDialogue(boss.quotes[2]);
-            if (boss.id === 'bacteria') spawnMinions(4);
-            if (boss.id === 'final') boss.state = 'desperate';
-        }
-
-        boss.attackTimer++;
-        const attackInterval = boss.id === 'bacteria' ? 120 : boss.id === 'sisters' ? 90 : boss.id === 'catomka' ? 100 : 80;
-        if (boss.attackTimer > attackInterval) {
-            boss.attackTimer = 0;
-            boss.attackPattern = (boss.attackPattern + 1) % boss.attacks.length;
-            boss.state = boss.attacks[boss.attackPattern];
-            boss.stateTimer = 60;
-            boss.platformShiftTimer = 0;
-            boss.gravityFlipTimer = 0;
-            boss.voidPullTimer = 0;
-            if (boss.state === 'spawn_minions') spawnMinions(2);
-            if (boss.state === 'projectile_barrage' || boss.state === 'double_projectile' || boss.state === 'timbul_wave') {
-                for (let i = 0; i < 3; i++) {
-                    boss.projectiles.push({
-                        x: boss.x,
-                        y: boss.y,
-                        vx: Math.cos(boss.orbitAngle + i * 1.5) * 3,
-                        vy: Math.sin(boss.orbitAngle + i * 1.5) * 3,
-                        w: 8,
-                        h: 8,
-                        life: 120
-                    });
-                }
-                AudioSys.sfx('attack');
-            }
-            if (boss.state === 'memory_shard' || boss.state === 'reality_break') {
-                for (let i = 0; i < 2; i++) {
-                    boss.memoryShards.push({
-                        x: boss.x + rand(-30, 30),
-                        y: boss.y - 20,
-                        vx: rand(-2, 2),
-                        vy: -3,
-                        w: 12,
-                        h: 12,
-                        life: 150
-                    });
-                }
-                AudioSys.sfx('attack');
-            }
-        }
-
-        // Update boss-specific behavior
-        if (boss.id === 'bacteria') {
-            if (boss.state === 'charge') {
-                const dx = player.x - boss.x;
-                boss.x += Math.sign(dx) * 2.5;
-                boss.y += (player.y - boss.y) * 0.02;
-            } else {
-                boss.x = 320 + Math.cos(boss.animTimer * 0.02) * 60;
-                boss.y = 300 + Math.sin(boss.animTimer * 0.03) * 40;
-            }
-        } else if (boss.id === 'sisters') {
-            if (boss.state === 'platform_shift') {
-                boss.platformShiftTimer++;
-                if (boss.platformShiftTimer % 30 === 0) {
-                    platforms.forEach(p => {
-                        if (p.type === 'platform' && p !== player.currentPlatform) {
-                            p.y += rand(-20, 20);
-                            if (p.y < 100) p.y = 100;
-                            if (p.y > 600) p.y = 600;
-                        }
-                    });
-                }
-            }
-            boss.x = 320 + Math.cos(boss.orbitAngle * 0.5) * 80;
-            boss.y = 250 + Math.sin(boss.orbitAngle * 0.7) * 50;
-        } else if (boss.id === 'catomka') {
-            if (boss.state === 'gravity_flip') {
-                boss.gravityFlipTimer++;
-                if (boss.gravityFlipTimer === 30) {
-                    // Temporarily reduce gravity
-                    if (player.vy > 0) player.vy = -player.vy * 0.7;
-                }
-            }
-            if (boss.state === 'void_pull') {
-                boss.voidPullTimer++;
-                const dx = boss.x - player.x;
-                const dy = boss.y - player.y;
-                const d = Math.sqrt(dx * dx + dy * dy) || 1;
-                if (d < 150 && d > 1) {
-                    player.vx += (dx / d) * 0.3;
-                    player.vy += (dy / d) * 0.15;
-                }
-            }
-            boss.x = 320 + Math.cos(boss.animTimer * 0.04) * 70;
-            boss.y = 280 + Math.sin(boss.animTimer * 0.05) * 30;
-        } else if (boss.id === 'final') {
-            if (boss.state === 'desperate') {
-                boss.x = 320 + Math.cos(boss.animTimer * 0.06) * 90;
-                boss.y = 250 + Math.sin(boss.animTimer * 0.04) * 70;
-            } else {
-                boss.x = 320 + Math.cos(boss.animTimer * 0.03) * 50;
-                boss.y = 300 + Math.sin(boss.animTimer * 0.02) * 30;
-            }
-        }
-
-        // Update boss projectiles
-        for (let i = boss.projectiles.length - 1; i >= 0; i--) {
-            const proj = boss.projectiles[i];
-            proj.x += proj.vx;
-            proj.y += proj.vy;
-            proj.life--;
-            if (proj.life <= 0 || proj.x < -20 || proj.x > DESIGN_WIDTH + 20 || proj.y < -20 || proj.y > DESIGN_HEIGHT + 20) {
-                boss.projectiles.splice(i, 1);
-                continue;
-            }
-            if (circleRectCollide(proj.x, proj.y, proj.w / 2, player) && player.invincible <= 0 && !player.dead) {
-                damagePlayer(1);
-                boss.projectiles.splice(i, 1);
-            }
-        }
-        // Update memory shards
-        for (let i = boss.memoryShards.length - 1; i >= 0; i--) {
-            const shard = boss.memoryShards[i];
-            shard.x += shard.vx;
-            shard.y += shard.vy;
-            shard.vy += 0.05;
-            shard.life--;
-            if (shard.life <= 0 || shard.x < -20 || shard.x > DESIGN_WIDTH + 20 || shard.y > DESIGN_HEIGHT + 20) {
-                boss.memoryShards.splice(i, 1);
-                continue;
-            }
-            if (circleRectCollide(shard.x, shard.y, shard.w / 2, player) && player.invincible <= 0 && !player.dead) {
-                damagePlayer(1);
-                boss.memoryShards.splice(i, 1);
-            }
-        }
-        // Update minions
-        for (let i = boss.minions.length - 1; i >= 0; i--) {
-            const minion = boss.minions[i];
-            minion.x += minion.vx;
-            minion.y += minion.vy;
-            minion.vy += 0.3;
-            if (minion.y > 630) { minion.y = 630; minion.vy = 0; minion.vx *= 0.9; }
-            if (minion.x < 10 || minion.x > 390) minion.vx *= -1;
-            minion.animTimer += 0.1;
-            if (circleRectCollide(minion.x, minion.y, 10, player) && player.invincible <= 0 && !player.dead) {
-                damagePlayer(1);
-                minion.dead = true;
-                boss.minions.splice(i, 1);
-            }
-            if (minion.hp <= 0) {
-                minion.dead = true;
-                spawnParticles(minion.x, minion.y, 5, '#ff4444');
-                boss.minions.splice(i, 1);
-            }
-        }
+    if(inputAttackPressed() && player.attackTimer<=0){
+      player.attackTimer = 0.35; player.attackHitDone=false; SFX.attack(); idle=false;
     }
+  }
 
-    function spawnMinions(count) {
-        if (!activeBoss) return;
-        for (let i = 0; i < count; i++) {
-            activeBoss.minions.push({
-                x: activeBoss.x + rand(-30, 30),
-                y: activeBoss.y - 20,
-                vx: rand(-1.5, 1.5),
-                vy: -2,
-                w: 14,
-                h: 14,
-                hp: 2,
-                maxHp: 2,
-                animTimer: 0,
-                dead: false,
-                color: '#ff6b6b',
-                type: 'minion'
-            });
-        }
+  if(player.attackTimer>0){ player.attackTimer -= dt; }
+
+  // гравитация
+  player.vy += GRAV_BASE*gravityMult*dt;
+  if(gravityMult>=0) player.vy = clamp(player.vy, -1200, 900);
+  else player.vy = clamp(player.vy, -900, 1200);
+
+  player.x += player.vx*dt;
+  player.y += player.vy*dt;
+
+  // границы уровня
+  player.x = clamp(player.x, 0, zone.def.width-player.w);
+
+  // столкновения с платформами (только сверху, простая модель)
+  player.onGround=false;
+  for(const p of zone.platformInstances){
+    const pb={x:p.x,y:p.y,w:p.w,h:p.h};
+    const feet = {x:player.x+6, y:player.y+player.h-4, w:player.w-12, h:8};
+    if(rectsOverlap(feet,pb) && player.vy>=0 && player.y+player.h-player.vy*dt <= p.y+2){
+      player.y = p.y-player.h; player.vy=0; player.onGround=true;
     }
-
-    function defeatBoss() {
-        if (!activeBoss || bossDefeated) return;
-        bossDefeated = true;
-        const bossId = activeBoss.id + '_' + currentZone;
-        if (!defeatedBosses.includes(bossId)) {
-            defeatedBosses.push(bossId);
-        }
-        if (currentZone < 5 && !unlockedZones.includes(currentZone + 1)) {
-            unlockedZones.push(currentZone + 1);
-        }
-        AudioSys.sfx('win');
-        AudioSys.vibrate([100, 50, 100]);
-        spawnParticles(activeBoss.x, activeBoss.y, 30, '#ffff00');
-        if (activeBoss.id === 'final') {
-            finalSequenceActive = true;
-            finalTimbulReveal = true;
-            gameState = 'final';
-            AudioSys.startMusic('final');
-            showDialogue('Тимбул: Ты помнишь... да. Ты всегда помнила.');
-            setTimeout(() => {
-                if (gameState === 'final') {
-                    showDialogue('Тимбул: Я был с тобой с самого начала. В каждой шутке. В каждом меме.');
-                }
-            }, 2000);
-            setTimeout(() => {
-                if (gameState === 'final') {
-                    showDialogue('Тимбул: Рэмилия, я — это ты. Точнее, та часть тебя, которую ты спрятала.');
-                }
-            }, 4000);
-            setTimeout(() => {
-                if (gameState === 'final') {
-                    showDialogue('Рэмилия: ...Ты хочешь сказать, что я всё это время сражалась с собой?');
-                }
-            }, 6000);
-            setTimeout(() => {
-                if (gameState === 'final') {
-                    showDialogue('Тимбул: Сражалась? Нет. Ты училась принимать. И теперь ты готова.');
-                }
-            }, 8000);
-            setTimeout(() => {
-                if (gameState === 'final') {
-                    showDialogue('Тимбул: Добро пожаловать домой, Рэмилия. В Смакоград. В себя.');
-                }
-            }, 10000);
-            setTimeout(() => {
-                if (gameState === 'final') {
-                    gameState = 'gameover';
-                    saveGame();
-                }
-            }, 12000);
-        } else {
-            showDialogue('ПОБЕДА! ' + activeBoss.name + ' повержен!');
-            setTimeout(() => {
-                activeBoss = null;
-                bossDefeated = false;
-                gameState = 'playing';
-                saveGame();
-                AudioSys.startMusic('zone' + currentZone);
-            }, 1500);
-        }
+  }
+  // земля по умолчанию
+  const groundPlane = {x:0,y:zone.def.groundY,w:zone.def.width,h:200};
+  if(player.y+player.h >= groundPlane.y && player.vy>=0){
+    // проверяем, не над ямой ли (pit)
+    let overPit=false;
+    for(const hz of zone.def.hazards){
+      if(hz.type==='pit' && player.x+player.w/2 > hz.x && player.x+player.w/2 < hz.x+hz.w) overPit=true;
     }
+    if(!overPit){ player.y = groundPlane.y-player.h; player.vy=0; player.onGround=true; }
+  }
+  if(player.y > zone.def.groundY+300){
+    // упал в пропасть
+    damagePlayer(25);
+    player.x = lastRespawnX; player.y = lastRespawnY; player.vy=0;
+  }
 
-    // ==================== DIALOGUE SYSTEM ====================
-    function showDialogue(text) {
-        currentDialogue = text;
-        dialogueIndex = 0;
-        gameState = 'dialogue';
-        AudioSys.sfx('dialogue');
+  // шипы
+  for(const hz of zone.def.hazards){
+    if(hz.type==='spike'){
+      const hb={x:hz.x,y:hz.y,w:hz.w,h:hz.h};
+      const pb={x:player.x+6,y:player.y+6,w:player.w-12,h:player.h-12};
+      if(rectsOverlap(pb,hb)){ damagePlayer(15); }
     }
+  }
 
-    function advanceDialogue() {
-        if (currentDialogue) {
-            currentDialogue = null;
-            if (bossIntroActive && !bossDefeated && activeBoss) {
-                gameState = 'boss';
-            } else if (finalSequenceActive) {
-                gameState = 'final';
-            } else {
-                gameState = 'playing';
-            }
-        }
+  // сбор предметов
+  for(const c of zone.collectibleInstances){
+    if(c.taken) continue;
+    const cb={x:c.x-10,y:c.y-10,w:20,h:20};
+    const pb={x:player.x,y:player.y,w:player.w,h:player.h};
+    if(rectsOverlap(pb,cb)){
+      c.taken=true; player.coins++; SFX.collect();
+      spawnParticles(c.x,c.y,10,{color: c.type==='secret'?'#c9a7ff':'#ffe15f'});
+      if(c.type==='secret' && !SAVE.progress.secretsFound.includes(zone.def.id+String(c.x))){
+        SAVE.progress.secretsFound.push(zone.def.id+String(c.x));
+        floatMessage('Найден секрет!', c.x-camera.x-20, c.y-camera.y-30);
+      }
     }
+  }
 
-    // ==================== PLAYER UPDATE ====================
-    function updatePlayer() {
-        if (!player || player.dead) return;
-        const p = player;
-
-        // Cooldowns
-        if (p.attackCooldown > 0) p.attackCooldown--;
-        if (p.dashCooldown > 0) p.dashCooldown--;
-        if (p.invincible > 0) p.invincible--;
-        if (p.hurtTimer > 0) p.hurtTimer--;
-        if (p.attackTimer > 0) {
-            p.attackTimer--;
-            p.attackAnim = ATTACK_DURATION - p.attackTimer;
-        } else {
-            p.attackAnim = 0;
-        }
-        if (p.dashTimer > 0) {
-            p.dashTimer--;
-            if (p.dashTimer === 0) {
-                p.vx *= 0.5;
-                p.vy *= 0.5;
-            }
-        }
-
-        // Input handling
-        let moveX = 0;
-        let jumpPressed = false;
-        let jumpHeld = false;
-        let attackPressed = false;
-        let dashPressed = false;
-
-        if (keys['left'] || keys['a']) moveX = -1;
-        if (keys['right'] || keys['d']) moveX = 1;
-        if (keys['jump'] || keys['space']) jumpPressed = true;
-        if (keys['jumpHeld'] || keys['space']) jumpHeld = true;
-        if (keys['attack'] || keys['j']) attackPressed = true;
-        if (keys['dash'] || keys['k']) dashPressed = true;
-
-        if (touchState.joystickX !== 0) moveX = touchState.joystickX;
-        if (touchState.jump) jumpPressed = true;
-        if (touchState.jumpHeld) jumpHeld = true;
-        if (touchState.attack) attackPressed = true;
-        if (touchState.dash) dashPressed = true;
-
-        // Dash
-        if (dashPressed && p.dashCooldown <= 0 && p.dashTimer <= 0) {
-            p.dashTimer = 12;
-            p.dashCooldown = 30;
-            p.vx = (moveX !== 0 ? moveX : p.facing) * DASH_SPEED;
-            p.vy = 0;
-            AudioSys.sfx('dash');
-            spawnParticles(p.x + p.w / 2, p.y + p.h / 2, 10, '#88ccff');
-            AudioSys.vibrate(20);
-        }
-
-        // Attack
-        if (attackPressed && p.attackCooldown <= 0 && p.attackTimer <= 0) {
-            p.attackTimer = ATTACK_DURATION;
-            p.attackCooldown = 20;
-            AudioSys.sfx('attack');
-            // Check hit enemies
-            const attackBox = {
-                x: p.facing > 0 ? p.x + p.w : p.x - ATTACK_RANGE,
-                y: p.y - 5,
-                w: ATTACK_RANGE + p.w,
-                h: p.h + 10
-            };
-            let damageMult = 1 + rage / 100 * 0.8;
-            enemies.forEach(e => {
-                if (e.dead) return;
-                if (rectCollide(attackBox, e)) {
-                    e.hp -= ATTACK_DAMAGE * damageMult;
-                    e.invincible = 8;
-                    AudioSys.sfx('hit');
-                    spawnParticles(e.x + e.w / 2, e.y + e.h / 2, 8, '#ffffff');
-                    if (e.hp <= 0) {
-                        e.dead = true;
-                        spawnParticles(e.x + e.w / 2, e.y + e.h / 2, 15, e.color);
-                        AudioSys.vibrate(30);
-                        score += 10;
-                    }
-                }
-            });
-            if (activeBoss && !bossDefeated) {
-                if (circleRectCollide(activeBoss.x, activeBoss.y, 30, attackBox)) {
-                    activeBoss.hp -= ATTACK_DAMAGE * damageMult;
-                    activeBoss.hitFlash = 10;
-                    AudioSys.sfx('hit');
-                    spawnParticles(activeBoss.x, activeBoss.y, 10, '#ffff00');
-                    if (activeBoss.hp <= 0) {
-                        defeatBoss();
-                    }
-                }
-            }
-        }
-
-        // Jump
-        if (jumpPressed) {
-            if (p.onGround || p.coyoteTime > 0) {
-                p.vy = JUMP_FORCE;
-                p.onGround = false;
-                p.jumpPressed = true;
-                p.coyoteTime = 0;
-                AudioSys.sfx('jump');
-                spawnParticles(p.x + p.w / 2, p.y + p.h, 5, '#cccccc');
-            }
-        }
-        if (jumpHeld && p.vy < 0) {
-            p.vy -= 0.15;
-        }
-
-        // Coyote time
-        if (p.onGround) {
-            p.coyoteTime = 8;
-        } else if (p.coyoteTime > 0) {
-            p.coyoteTime--;
-        }
-
-        // Standing still rage increase
-        if (Math.abs(moveX) < 0.1 && p.onGround) {
-            p.standingStillTimer++;
-            if (p.standingStillTimer > 120) {
-                rage = Math.min(maxRage, rage + 0.3);
-                if (p.standingStillTimer % 60 === 0 && rage > 50) {
-                    showDialogue('Рэмилия: Почему все всегда так медленно?!');
-                }
-            }
-        } else {
-            p.standingStillTimer = 0;
-        }
-
-        // Rage passive decrease
-        if (rage > 0 && p.standingStillTimer < 60) {
-            rage = Math.max(0, rage - 0.05);
-        }
-
-        // Movement
-        if (p.dashTimer <= 0) {
-            p.vx = moveX * PLAYER_SPEED;
-            if (moveX !== 0) p.facing = moveX;
-        }
-        p.vy += GRAVITY;
-        if (p.vy > MAX_FALL) p.vy = MAX_FALL;
-
-        // Platform collision
-        p.onGround = false;
-        p.currentPlatform = null;
-        platforms.forEach(plat => {
-            if (p.vy >= 0 &&
-                p.x + p.w > plat.x && p.x < plat.x + plat.w &&
-                p.y + p.h > plat.y && p.y + p.h < plat.y + plat.h + p.vy + 5) {
-                p.y = plat.y - p.h;
-                p.vy = 0;
-                p.onGround = true;
-                p.currentPlatform = plat;
-                if (plat.type === 'moving') {
-                    p.x += Math.sin(plat.moveTimer) * 0.5;
-                }
-            }
-        });
-
-        // Horizontal collision with platforms
-        platforms.forEach(plat => {
-            if (rectCollide(p, plat)) {
-                if (p.vy >= 0 && p.y + p.h > plat.y && p.y < plat.y) {
-                    p.y = plat.y - p.h;
-                    p.vy = 0;
-                    p.onGround = true;
-                    p.currentPlatform = plat;
-                }
-            }
-        });
-
-        // Ground collision
-        platforms.forEach(plat => {
-            if (plat.type === 'ground' && rectCollide(p, plat)) {
-                if (p.vy >= 0) {
-                    p.y = plat.y - p.h;
-                    p.vy = 0;
-                    p.onGround = true;
-                    p.currentPlatform = plat;
-                }
-            }
-        });
-
-        // Keep in bounds
-        if (p.x < 0) p.x = 0;
-        if (p.x + p.w > DESIGN_WIDTH) p.x = DESIGN_WIDTH - p.w;
-        if (p.y > DESIGN_HEIGHT) {
-            damagePlayer(999);
-        }
-        if (p.y < -50) p.y = -50;
-
-        // Animation
-        p.animTimer += Math.abs(moveX);
-        if (p.animTimer > 5) {
-            p.animTimer = 0;
-            p.animFrame = (p.animFrame + 1) % 4;
-        }
-        if (Math.abs(moveX) > 0.1) {
-            p.walkCycle += 0.15;
-        }
-
-        // Update position
-        p.x += p.vx;
-        p.y += p.vy;
+  // атака по врагам
+  if(player.attackTimer>0.15 && !player.attackHitDone){
+    const range = 34;
+    const atkBox = {x: player.facing>0? player.x+player.w : player.x-range, y:player.y+4, w:range, h:player.h-8};
+    let hitSomething=false;
+    for(const e of zone.enemyInstances){
+      if(e.dead) continue;
+      if(rectsOverlap(atkBox, {x:e.x,y:e.y,w:e.w,h:e.h})){
+        const dmg = player.rage>70? 40: 20;
+        e.hp -= dmg; e.hitFlash=0.15; hitSomething=true;
+        if(e.hp<=0){ e.dead=true; spawnParticles(e.x+e.w/2,e.y+e.h/2,14,{color:'#8bc34a'}); }
+      }
     }
-
-    function damagePlayer(amount) {
-        if (player.dead || player.invincible > 0) return;
-        health -= amount;
-        player.invincible = 45;
-        player.hurtTimer = 20;
-        rage = Math.min(maxRage, rage + 20);
-        AudioSys.sfx('hurt');
-        AudioSys.vibrate([50, 30, 50]);
-        spawnParticles(player.x + player.w / 2, player.y + player.h / 2, 10, '#ff4444');
-        camera.shakeIntensity = 8;
-        if (rage > 50) {
-            showDialogue('Рэмилия: ДА КАК ТЫ СМЕЕШЬ?!');
-        } else if (rage > 80) {
-            showDialogue('Рэмилия: Я УБЬЮ ВСЁ ЖИВОЕ И НЕЖИВОЕ!');
+    if(boss && bossActive){
+      let targets=[];
+      if(boss.id==='sisters'){
+        if(boss.kira.alive) targets.push({obj:boss.kira, box:{x:boss.kira.x,y:boss.kira.y,w:50,h:50}});
+        if(boss.reva.alive) targets.push({obj:boss.reva, box:{x:boss.reva.x,y:boss.reva.y,w:50,h:50}});
+      } else {
+        targets.push({obj:boss, box:{x:boss.x,y:boss.y,w:boss.w,h:boss.h}});
+      }
+      for(const t of targets){
+        if(rectsOverlap(atkBox, t.box)){
+          const dmg = player.rage>70? 26:14;
+          damageBoss(t.obj, dmg); hitSomething=true;
+          if(t.obj.hp<=0){ t.obj.dead=true; if(t.obj.alive!==undefined) t.obj.alive=false; }
         }
-        if (health <= 0) {
-            player.dead = true;
-            health = 0;
-            AudioSys.sfx('death');
-            AudioSys.vibrate([100, 50, 100, 50, 100]);
-            gameState = 'gameover';
-            setTimeout(() => {
-                if (gameState === 'gameover') {
-                    resetAfterDeath();
-                }
-            }, 1500);
-        }
+      }
     }
+    if(hitSomething){ SFX.hurt(); vibrate(20); }
+    player.attackHitDone=true;
+  }
+  zone.enemyInstances = zone.enemyInstances.filter(e=>!e.dead);
 
-    function resetAfterDeath() {
-        health = maxHealth;
-        rage = 0;
-        player.dead = false;
-        player.invincible = 60;
-        player.x = currentCheckpoint ? currentCheckpoint.x : 30;
-        player.y = currentCheckpoint ? currentCheckpoint.y - 20 : 620;
-        player.vx = 0;
-        player.vy = 0;
-        player.attackTimer = 0;
-        player.dashTimer = 0;
-        player.hurtTimer = 0;
-        gameState = 'playing';
-        activeBoss = null;
-        bossDefeated = false;
-        bossIntroActive = false;
-        AudioSys.startMusic('zone' + currentZone);
+  // ярость: рост от долгого стояния
+  if(idle && player.onGround){
+    player.idleTimer += dt;
+    if(player.idleTimer>4){ addRage(6*dt); }
+  } else { player.idleTimer=0; }
+
+  // определение состояния для анимации
+  if(player.state!=='hurt' || player.stateTimer<=0){
+    if(player.dashTimer>0) player.state='dash';
+    else if(!player.onGround) player.state = player.vy<0?'jump':'fall';
+    else if(player.attackTimer>0) player.state='attack';
+    else if(Math.abs(player.vx)>5) player.state='walk';
+    else player.state='idle';
+  }
+  player.animT += dt;
+
+  // проверка диалогов по позиции
+  for(let i=zone.dialoguesRemaining.length-1;i>=0;i--){
+    const d = zone.dialoguesRemaining[i];
+    if(player.x >= d.x){
+      SAVE.progress.seenDialogues.push(d.id);
+      zone.dialoguesRemaining.splice(i,1);
+      showDialogueSequence(d.lines.map(l=>({sp:l.sp,tx:l.tx})));
+      persistSave();
+      break;
     }
+  }
 
-    // ==================== ENEMY UPDATE ====================
-    function updateEnemies() {
-        enemies.forEach(e => {
-            if (e.dead) return;
-            if (e.invincible > 0) e.invincible--;
-            e.animTimer += 0.05;
-            switch(e.type) {
-                case 'walker':
-                    e.x += e.patrolDir * e.speed;
-                    if (e.x < e.patrolMin || e.x > e.patrolMax) {
-                        e.patrolDir *= -1;
-                    }
-                    if (e.x < e.patrolMin) e.x = e.patrolMin;
-                    if (e.x > e.patrolMax) e.x = e.patrolMax;
-                    break;
-                case 'flyer':
-                    e.x += Math.sin(e.animTimer * 0.02) * e.speed;
-                    e.y += Math.cos(e.animTimer * 0.03) * 0.5;
-                    if (e.x < e.patrolMin) e.x = e.patrolMin;
-                    if (e.x > e.patrolMax) e.x = e.patrolMax;
-                    break;
-                case 'spitter':
-                    e.attackTimer++;
-                    if (e.attackTimer > 100) {
-                        e.attackTimer = 0;
-                        projectiles.push({
-                            x: e.x + e.w / 2,
-                            y: e.y + e.h / 2,
-                            vx: (player.x - e.x) / 50,
-                            vy: (player.y - e.y) / 50,
-                            w: 8,
-                            h: 8,
-                            life: 100,
-                            color: '#ff00ff'
-                        });
-                        AudioSys.sfx('attack');
-                    }
-                    break;
-            }
-            // Enemy-player collision
-            if (rectCollide(e, player) && player.invincible <= 0 && !player.dead) {
-                damagePlayer(1);
-            }
-        });
-        // Update projectiles
-        for (let i = projectiles.length - 1; i >= 0; i--) {
-            const proj = projectiles[i];
-            proj.x += proj.vx;
-            proj.y += proj.vy;
-            proj.life--;
-            if (proj.life <= 0 || proj.x < -20 || proj.x > DESIGN_WIDTH + 20 || proj.y < -20 || proj.y > DESIGN_HEIGHT + 20) {
-                projectiles.splice(i, 1);
-                continue;
-            }
-            if (circleRectCollide(proj.x, proj.y, 4, player) && player.invincible <= 0 && !player.dead) {
-                damagePlayer(1);
-                projectiles.splice(i, 1);
-            }
-        }
+  // чекпоинты
+  for(const cx of zone.def.checkpoints){
+    if(player.x >= cx && lastRespawnX < cx){ lastRespawnX = cx; lastRespawnY = zone.def.groundY-60; }
+  }
+
+  // босс триггер
+  if(!zone.bossTriggered && player.x >= zone.def.exitX-950 && zone.def.boss){
+    zone.bossTriggered = true;
+    startBoss(zone.def);
+  }
+
+  // конец уровня
+  if(!bossActive && zone.bossTriggered!==false ? false : false){}
+  if(!bossActive && bossDefeatedThisRunOrNoBoss(zone) && player.x >= zone.def.exitX){
+    goToNextZone();
+  }
+}
+function bossDefeatedThisRunOrNoBoss(zone){
+  if(!zone.def.boss) return true;
+  return zone.bossTriggered && !bossActive;
+}
+
+function goToNextZone(){
+  currentZoneIndex++;
+  if(currentZoneIndex >= ZONES.length){
+    showVictory();
+    return;
+  }
+  SAVE.progress.zoneIndex = currentZoneIndex;
+  SAVE.progress.hasSave = true;
+  persistSave();
+  buildZone(currentZoneIndex);
+}
+
+/* ============================================================
+   ОТРИСОВКА ФОНА (по стилю зоны)
+============================================================ */
+function drawBackground(zone){
+  const g = ctx.createLinearGradient(0,0,0,VH);
+  g.addColorStop(0, zone.def.bgTop);
+  g.addColorStop(1, zone.def.bgBottom);
+  ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH);
+
+  const parallax = camera.x*0.3;
+  ctx.globalAlpha=0.5;
+  if(zone.def.deco==='candy'){
+    for(let i=0;i<10;i++){
+      const x = (i*300 - parallax%300) ;
+      ctx.fillStyle = i%2===0?'#ffb3d9':'#ff8fc7';
+      ctx.beginPath(); ctx.arc(x, 120+((i*53)%80), 40,0,Math.PI*2); ctx.fill();
     }
-
-    // ==================== COLLECTIBLES ====================
-    function updateCollectibles() {
-        collectibles.forEach(c => {
-            if (c.collected) return;
-            if (circleRectCollide(c.x, c.y, 12, player)) {
-                c.collected = true;
-                if (c.type === 'coin') {
-                    score += 20;
-                    AudioSys.sfx('collect');
-                    spawnParticles(c.x, c.y, 8, '#ffd700');
-                } else if (c.type === 'secret') {
-                    score += 100;
-                    AudioSys.sfx('secret');
-                    if (c.secretId && !secretsFound.includes(c.secretId)) {
-                        secretsFound.push(c.secretId);
-                    }
-                    secretMessage = 'СЕКРЕТ НАЙДЕН!';
-                    secretTimer = 120;
-                    spawnParticles(c.x, c.y, 15, '#ff00ff');
-                    showDialogue('Рэмилия: О, секретик! Очередная тупая шутка этой игры?');
-                }
-            }
-        });
-        if (secretTimer > 0) secretTimer--;
+  } else if(zone.def.deco==='village'){
+    for(let i=0;i<8;i++){
+      const x = (i*380 - parallax%380);
+      ctx.fillStyle='#8d6e63';
+      ctx.fillRect(x,300,60,140);
+      ctx.fillStyle='#d84315';
+      ctx.beginPath(); ctx.moveTo(x-10,300); ctx.lineTo(x+30,250); ctx.lineTo(x+70,300); ctx.fill();
     }
-
-    // ==================== PARTICLES ====================
-    function spawnParticles(x, y, count, color) {
-        for (let i = 0; i < count; i++) {
-            particles.push({
-                x, y,
-                vx: rand(-3, 3),
-                vy: rand(-4, 1),
-                life: rand(20, 50),
-                maxLife: 50,
-                color,
-                size: rand(2, 5)
-            });
-        }
-        if (particles.length > 150) particles.splice(0, particles.length - 150);
+  } else if(zone.def.deco==='machine'){
+    for(let i=0;i<12;i++){
+      const x=(i*220-parallax%220);
+      ctx.fillStyle='#333';
+      ctx.fillRect(x,150+((i*37)%300),16,300);
     }
-    function updateParticles() {
-        for (let i = particles.length - 1; i >= 0; i--) {
-            const p = particles[i];
-            p.x += p.vx;
-            p.y += p.vy;
-            p.vy += 0.15;
-            p.life--;
-            if (p.life <= 0) {
-                particles.splice(i, 1);
-            }
-        }
+  } else if(zone.def.deco==='void'){
+    for(let i=0;i<20;i++){
+      const x=(i*140-parallax*0.6%140);
+      const y=(i*77)%VH;
+      ctx.fillStyle='#c9a7ff';
+      ctx.globalAlpha=0.15+0.1*Math.sin(performance.now()/500+i);
+      ctx.fillRect(x,y,3,3);
     }
-
-    // ==================== MEME BUTTON ====================
-    function triggerMeme() {
-        if (memeCooldown > 0) return;
-        memeCooldown = 150;
-        memeTimer = 30;
-        AudioSys.sfx('meme');
-        AudioSys.vibrate(30);
-        const effects = [
-            'scream',
-            'timbul_appear',
-            'item_fly',
-            'music_change',
-            'screen_shake',
-            'rage_boost',
-            'random_npc',
-            'platform_jump',
-            'giant_text',
-            'invert_colors'
-        ];
-        const effect = effects[randInt(0, effects.length - 1)];
-        switch(effect) {
-            case 'scream':
-                showDialogue('Рэмилия: АААААААААААА!!!');
-                screenEffect = { type: 'shake', timer: 60, intensity: 10 };
-                break;
-            case 'timbul_appear':
-                timbulActive = true;
-                timbulTimer = 100;
-                timbulMessage = 'Тимбул: Я всегда рядом.';
-                AudioSys.sfx('secret');
-                break;
-            case 'item_fly':
-                if (collectibles.length > 0) {
-                    const c = collectibles.find(c => !c.collected);
-                    if (c) {
-                        c.collected = true;
-                        score += 50;
-                        spawnParticles(c.x, c.y, 20, '#ff00ff');
-                    }
-                }
-                showDialogue('Рэмилия: Куда это улетело?!');
-                break;
-            case 'music_change':
-                AudioSys.startMusic('final');
-                setTimeout(() => { if (gameState === 'playing') AudioSys.startMusic('zone' + currentZone); }, 3000);
-                showDialogue('Рэмилия: Это что за музыкальная пауза?!');
-                break;
-            case 'screen_shake':
-                screenEffect = { type: 'shake', timer: 40, intensity: 15 };
-                showDialogue('Рэмилия: Земля трясётся! Или это я от злости?');
-                break;
-            case 'rage_boost':
-                rage = Math.min(maxRage, rage + 30);
-                screenEffect = { type: 'rage_flash', timer: 30, intensity: 10 };
-                showDialogue('Рэмилия: ЯРОСТЬ!!!');
-                AudioSys.sfx('rage');
-                break;
-            case 'random_npc':
-                showDialogue('Случайный NPC: Тимбул сказал, что ты нажмёшь эту кнопку.');
-                break;
-            case 'platform_jump':
-                platforms.forEach(p => {
-                    if (p.type !== 'ground') p.y -= 30;
-                });
-                showDialogue('Рэмилия: Платформы с ума сошли!');
-                break;
-            case 'giant_text':
-                screenEffect = { type: 'giant_text', timer: 90, intensity: 50, text: 'MEME!' };
-                showDialogue('Рэмилия: Слишком много мемов!');
-                break;
-            case 'invert_colors':
-                screenEffect = { type: 'invert', timer: 80, intensity: 1 };
-                showDialogue('Рэмилия: Мир перевернулся! Или это мой мозг?');
-                break;
-        }
+  } else if(zone.def.deco==='final'){
+    ctx.globalAlpha=0.25;
+    for(let i=0;i<6;i++){
+      const x=(i*400-parallax%400);
+      ctx.fillStyle='#ff2f8f';
+      ctx.fillRect(x,0,2,VH);
     }
+  }
+  ctx.globalAlpha=1;
+}
 
-    // ==================== INPUT ====================
-    const keys = {};
-    const touchState = {
-        joystickX: 0,
-        joystickY: 0,
-        jump: false,
-        jumpHeld: false,
-        attack: false,
-        dash: false,
-        meme: false
-    };
-    let joystickActive = false;
-    let joystickCenter = { x: 0, y: 0 };
+/* ============================================================
+   ОТРИСОВКА ИГРОКА (процедурно)
+============================================================ */
+function drawPlayer(){
+  const sx = player.x-camera.x, sy=player.y-camera.y;
+  ctx.save();
+  ctx.translate(sx+player.w/2, sy+player.h/2);
+  ctx.scale(player.facing,1);
 
-    function initInput() {
-        window.addEventListener('keydown', (e) => {
-            keys[e.key.toLowerCase()] = true;
-            if (e.key === ' ') keys['space'] = true;
-            if (e.key === 'ArrowLeft') keys['left'] = true;
-            if (e.key === 'ArrowRight') keys['right'] = true;
-            if (e.key === ' ') keys['jump'] = true;
-            if (e.key === 'j' || e.key === 'J') keys['j'] = true;
-            if (e.key === 'k' || e.key === 'K') keys['k'] = true;
-            if (e.key === 'a' || e.key === 'A') keys['a'] = true;
-            if (e.key === 'd' || e.key === 'D') keys['d'] = true;
-            if (e.key === 'Enter' || e.key === ' ') {
-                if (gameState === 'dialogue' && currentDialogue) advanceDialogue();
-                else if (gameState === 'menu') startNewGame();
-                else if (gameState === 'gameover') resetAfterDeath();
-                else if (gameState === 'paused') togglePause();
-                else if (gameState === 'final') { /* final handled */ }
-            }
-            if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
-                togglePause();
-            }
-        });
-        window.addEventListener('keyup', (e) => {
-            keys[e.key.toLowerCase()] = false;
-            if (e.key === ' ') keys['space'] = false;
-            if (e.key === 'ArrowLeft') keys['left'] = false;
-            if (e.key === 'ArrowRight') keys['right'] = false;
-            if (e.key === ' ') keys['jump'] = false;
-            if (e.key === 'j' || e.key === 'J') keys['j'] = false;
-            if (e.key === 'k' || e.key === 'K') keys['k'] = false;
-            if (e.key === 'a' || e.key === 'A') keys['a'] = false;
-            if (e.key === 'd' || e.key === 'D') keys['d'] = false;
-        });
+  if(player.hurtFlash>0 && Math.floor(player.hurtFlash*20)%2===0){ ctx.filter='brightness(2.2) saturate(0)'; }
+  if(player.invuln>0 && player.state!=='dash'){ ctx.globalAlpha = 0.6+0.4*Math.sin(performance.now()/40); }
 
-        // Touch joystick
-        const jz = document.getElementById('joystick-zone');
-        const jk = document.getElementById('joystick-knob');
-        if (jz && jk) {
-            jz.addEventListener('pointerdown', (e) => {
-                e.preventDefault();
-                joystickActive = true;
-                jz.setPointerCapture(e.pointerId);
-                updateJoystick(e);
-            });
-            jz.addEventListener('pointermove', (e) => {
-                if (joystickActive) updateJoystick(e);
-            });
-            jz.addEventListener('pointerup', (e) => {
-                joystickActive = false;
-                touchState.joystickX = 0;
-                touchState.joystickY = 0;
-                if (jk) {
-                    jk.style.left = '50%';
-                    jk.style.top = '50%';
-                    jk.style.transform = 'translate(-50%, -50%)';
-                }
-            });
-            jz.addEventListener('pointercancel', (e) => {
-                joystickActive = false;
-                touchState.joystickX = 0;
-                touchState.joystickY = 0;
-                if (jk) {
-                    jk.style.left = '50%';
-                    jk.style.top = '50%';
-                    jk.style.transform = 'translate(-50%, -50%)';
-                }
-            });
-        }
+  let bob=0, legSwing=0, armAngle=0;
+  if(player.state==='walk'){ bob=Math.sin(player.animT*10)*2; legSwing=Math.sin(player.animT*10)*10; }
+  if(player.state==='jump' || player.state==='fall'){ legSwing=6; }
+  if(player.state==='dead'){ ctx.rotate(Math.PI/2*0.9); ctx.globalAlpha=0.7; }
+  if(player.state==='victory'){ bob = Math.abs(Math.sin(player.animT*4))*6; armAngle=-1.4; }
+  if(player.state==='attack'){ armAngle = -0.9; }
+  if(player.state==='taunt'){ bob=Math.sin(player.animT*14)*4; }
 
-        function updateJoystick(e) {
-            const rect = jz.getBoundingClientRect();
-            const cx = rect.left + rect.width / 2;
-            const cy = rect.top + rect.height / 2;
-            const dx = e.clientX - cx;
-            const dy = e.clientY - cy;
-            const maxDist = rect.width / 2 - 10;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            const clampedDist = Math.min(dist, maxDist);
-            const angle = Math.atan2(dy, dx);
-            const newX = Math.cos(angle) * clampedDist;
-            const newY = Math.sin(angle) * clampedDist;
-            if (jk) {
-                jk.style.left = 'calc(50% + ' + newX + 'px)';
-                jk.style.top = 'calc(50% + ' + newY + 'px)';
-                jk.style.transform = 'translate(-50%, -50%)';
-            }
-            const normalizedX = newX / maxDist;
-            touchState.joystickX = normalizedX;
-            touchState.joystickY = newY / maxDist;
-        }
+  // ноги
+  ctx.fillStyle='#5a2a6b';
+  ctx.fillRect(-10, 10+bob, 8, 16+legSwing*0.3);
+  ctx.fillRect(2, 10+bob, 8, 16-legSwing*0.3);
 
-        // Touch buttons
-        const btnJump = document.getElementById('btn-jump');
-        const btnAttack = document.getElementById('btn-attack');
-        const btnDash = document.getElementById('btn-dash');
-        const btnMeme = document.getElementById('btn-meme');
+  // тело (толстенькое)
+  ctx.fillStyle = player.rage>70? '#ff2f4f' : '#ff5f9e';
+  ctx.beginPath();
+  ctx.ellipse(0, bob-2, 19, 20, 0,0,Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle='#7a0043'; ctx.lineWidth=2; ctx.stroke();
 
-        if (btnJump) {
-            btnJump.addEventListener('pointerdown', (e) => { e.preventDefault(); touchState.jump = true; touchState.jumpHeld = true; btnJump.setPointerCapture(e.pointerId); });
-            btnJump.addEventListener('pointerup', (e) => { touchState.jump = false; touchState.jumpHeld = false; });
-            btnJump.addEventListener('pointercancel', (e) => { touchState.jump = false; touchState.jumpHeld = false; });
-        }
-        if (btnAttack) {
-            btnAttack.addEventListener('pointerdown', (e) => { e.preventDefault(); touchState.attack = true; btnAttack.setPointerCapture(e.pointerId); });
-            btnAttack.addEventListener('pointerup', (e) => { touchState.attack = false; });
-            btnAttack.addEventListener('pointercancel', (e) => { touchState.attack = false; });
-        }
-        if (btnDash) {
-            btnDash.addEventListener('pointerdown', (e) => { e.preventDefault(); touchState.dash = true; btnDash.setPointerCapture(e.pointerId); });
-            btnDash.addEventListener('pointerup', (e) => { touchState.dash = false; });
-            btnDash.addEventListener('pointercancel', (e) => { touchState.dash = false; });
-        }
-        if (btnMeme) {
-            btnMeme.addEventListener('pointerdown', (e) => { e.preventDefault(); triggerMeme(); btnMeme.setPointerCapture(e.pointerId); });
-            btnMeme.addEventListener('pointerup', (e) => { /* meme is triggered on down */ });
-        }
+  // рука атаки
+  ctx.save();
+  ctx.translate(14, bob-2);
+  ctx.rotate(armAngle);
+  ctx.fillStyle='#ff5f9e';
+  ctx.fillRect(0,-4, player.state==='attack'?30:14, 8);
+  ctx.restore();
+  if(player.state==='attack'){
+    ctx.strokeStyle='rgba(255,255,255,0.8)'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.arc(14, bob-2, 26, -0.6,0.6); ctx.stroke();
+  }
+
+  // лицо злое
+  ctx.fillStyle='#2a0018';
+  ctx.fillRect(2, bob-10, 4,4); // глаз
+  ctx.save();
+  ctx.translate(2,bob-13); ctx.rotate(0.4); ctx.fillRect(-3,-1,7,2); ctx.restore(); // бровь злая
+  if(player.state==='victory'){
+    ctx.beginPath(); ctx.arc(6, bob-2, 5,0,Math.PI); ctx.stroke();
+  } else if(player.hp < player.maxHp*0.3){
+    ctx.beginPath(); ctx.moveTo(0,bob+2); ctx.lineTo(8,bob+2); ctx.stroke();
+  } else {
+    ctx.beginPath(); ctx.arc(4,bob+0,4,0.2,Math.PI-0.2,true); ctx.stroke();
+  }
+
+  // dash след
+  if(player.state==='dash'){
+    ctx.globalAlpha=0.4;
+    ctx.fillStyle='#ff9fd0';
+    ctx.beginPath(); ctx.ellipse(-20,bob-2,14,14,0,0,Math.PI*2); ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+/* ============================================================
+   ОТРИСОВКА ТИМБУЛА (случайные камео)
+============================================================ */
+let timbulCameo = null; // {x,y,timer}
+let timbulSpawnTimer = rand(6,14);
+function updateTimbulCameo(dt, zone){
+  if(gameState!=='playing') return;
+  timbulSpawnTimer -= dt;
+  if(!timbulCameo && timbulSpawnTimer<=0){
+    timbulSpawnTimer = rand(10,20);
+    timbulCameo = {x: player.x+rand(-40,220), y: zone.def.groundY-140-rand(0,60), timer: rand(1.6,2.6)};
+  }
+  if(timbulCameo){
+    timbulCameo.timer -= dt;
+    if(timbulCameo.timer<=0) timbulCameo=null;
+  }
+}
+function drawTimbulCameo(){
+  if(!timbulCameo) return;
+  const sx=timbulCameo.x-camera.x, sy=timbulCameo.y-camera.y;
+  ctx.save();
+  ctx.globalAlpha = clamp(timbulCameo.timer,0,1);
+  ctx.fillStyle='#c9a7ff';
+  ctx.beginPath(); ctx.ellipse(sx,sy,16,20,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#2a0018';
+  ctx.fillRect(sx-6,sy-6,3,3); ctx.fillRect(sx+3,sy-6,3,3);
+  ctx.strokeStyle='#7a4dbf'; ctx.lineWidth=2; ctx.stroke();
+  ctx.restore();
+}
+
+/* ============================================================
+   ОТРИСОВКА УРОВНЯ
+============================================================ */
+function drawZone(zone){
+  drawBackground(zone);
+
+  // земля
+  ctx.fillStyle='#3a2b1a';
+  ctx.fillRect(0-camera.x, zone.def.groundY-camera.y, zone.def.width, 200);
+  ctx.fillStyle='#5a4326';
+  ctx.fillRect(0-camera.x, zone.def.groundY-camera.y, zone.def.width, 8);
+  // ямы - вырезаем визуально тёмным
+  for(const hz of zone.def.hazards){
+    if(hz.type==='pit'){
+      ctx.fillStyle = zone.def.bgBottom;
+      ctx.fillRect(hz.x-camera.x, zone.def.groundY-camera.y, hz.w, 200);
     }
+  }
 
-    // ==================== MENU ====================
-    function showMenu() {
-        gameState = 'menu';
-        AudioSys.startMusic('menu');
-        transitionAlpha = 1;
-        transitionType = 'fade_in';
-    }
+  // платформы
+  for(const p of zone.platformInstances){
+    ctx.fillStyle='#7a5230';
+    ctx.fillRect(p.x-camera.x, p.y-camera.y, p.w, p.h);
+    ctx.fillStyle='#a97c4f';
+    ctx.fillRect(p.x-camera.x, p.y-camera.y, p.w, 4);
+  }
 
-    function startNewGame() {
-        health = maxHealth;
-        rage = 0;
-        score = 0;
-        secretsFound = [];
-        defeatedBosses = [];
-        unlockedZones = [1];
-        storyProgress = 0;
-        currentCheckpoint = null;
-        currentZone = 1;
-        loadZone(1);
-        saveGame();
-    }
-
-    function continueGame() {
-        if (loadSave()) {
-            if (currentZone > 0 && currentZone <= 5) {
-                loadZone(currentZone);
-            } else {
-                startNewGame();
-            }
-        } else {
-            startNewGame();
-        }
-    }
-
-    function togglePause() {
-        if (gameState === 'playing' || gameState === 'boss') {
-            gameState = 'paused';
-            AudioSys.startMusic('menu');
-        } else if (gameState === 'paused') {
-            gameState = activeBoss ? 'boss' : 'playing';
-            AudioSys.startMusic('zone' + currentZone);
-        }
-    }
-
-    // ==================== RENDER ====================
-    function render() {
-        ctx.clearRect(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
-
-        if (screenEffect.type === 'invert') {
-            ctx.save();
-            ctx.filter = 'invert(1)';
-            drawWorld();
-            ctx.restore();
-        } else {
-            drawWorld();
-        }
-
-        // Screen effects
-        if (screenEffect.type === 'shake') {
-            screenEffect.timer--;
-            if (screenEffect.timer <= 0) screenEffect.type = null;
-        }
-        if (screenEffect.type === 'giant_text') {
-            screenEffect.timer--;
-            if (screenEffect.timer <= 0) screenEffect.type = null;
-            else {
-                ctx.save();
-                ctx.font = 'bold 80px Arial';
-                ctx.fillStyle = '#ff00ff';
-                ctx.textAlign = 'center';
-                ctx.globalAlpha = 0.7;
-                ctx.fillText(screenEffect.text || 'MEME!', DESIGN_WIDTH / 2, DESIGN_HEIGHT / 2);
-                ctx.restore();
-            }
-        }
-        if (screenEffect.type === 'invert') {
-            screenEffect.timer--;
-            if (screenEffect.timer <= 0) screenEffect.type = null;
-        }
-        if (screenEffect.type === 'rage_flash') {
-            screenEffect.timer--;
-            if (screenEffect.timer <= 0) screenEffect.type = null;
-            else {
-                ctx.save();
-                ctx.fillStyle = 'rgba(255,0,0,0.3)';
-                ctx.fillRect(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
-                ctx.restore();
-            }
-        }
-
-        // Camera shake
-        if (camera.shakeIntensity > 0) {
-            camera.shakeX = rand(-camera.shakeIntensity, camera.shakeIntensity);
-            camera.shakeY = rand(-camera.shakeIntensity, camera.shakeIntensity);
-            camera.shakeIntensity *= 0.85;
-            if (camera.shakeIntensity < 0.5) camera.shakeIntensity = 0;
-        } else {
-            camera.shakeX = 0;
-            camera.shakeY = 0;
-        }
-
-        // UI
-        drawUI();
-
-        // Dialogue overlay
-        if (currentDialogue && gameState === 'dialogue') {
-            drawDialogue();
-        }
-
-        // Boss intro
-        if (bossIntroActive && bossIntroTimer > 0 && activeBoss) {
-            bossIntroTimer--;
-            ctx.save();
-            ctx.fillStyle = 'rgba(0,0,0,0.7)';
-            ctx.fillRect(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 28px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(bossNameDisplay, DESIGN_WIDTH / 2, DESIGN_HEIGHT / 2 - 20);
-            ctx.font = '16px Arial';
-            ctx.fillText(activeBoss.phases[bossPhaseIndex]?.name || '', DESIGN_WIDTH / 2, DESIGN_HEIGHT / 2 + 20);
-            ctx.restore();
-            if (bossIntroTimer <= 0) bossIntroActive = false;
-        }
-
-        // Menu
-        if (gameState === 'menu') {
-            drawMenu();
-        }
-
-        // Pause
-        if (gameState === 'paused') {
-            drawPause();
-        }
-
-        // Game over
-        if (gameState === 'gameover') {
-            drawGameOver();
-        }
-
-        // Final
-        if (gameState === 'final') {
-            drawFinal();
-        }
-
-        // Transition
-        if (transitionAlpha > 0) {
-            ctx.save();
-            ctx.fillStyle = 'rgba(0,0,0,' + transitionAlpha + ')';
-            ctx.fillRect(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
-            ctx.restore();
-            if (transitionType === 'fade_in') {
-                transitionAlpha -= 0.03;
-                if (transitionAlpha <= 0) {
-                    transitionAlpha = 0;
-                    transitionType = null;
-                }
-            }
-        }
-
-        // Timbul overlay
-        if (timbulActive && timbulTimer > 0) {
-            timbulTimer--;
-            ctx.save();
-            ctx.fillStyle = 'rgba(100,100,200,0.9)';
-            ctx.fillRect(DESIGN_WIDTH / 2 - 60, 20, 120, 40);
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '14px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('Тимбул', DESIGN_WIDTH / 2, 38);
-            ctx.fillText(timbulMessage, DESIGN_WIDTH / 2, 55);
-            ctx.restore();
-            if (timbulTimer <= 0) timbulActive = false;
-        }
-
-        // Secret message
-        if (secretTimer > 0) {
-            ctx.save();
-            ctx.fillStyle = '#ff00ff';
-            ctx.font = 'bold 20px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(secretMessage, DESIGN_WIDTH / 2, 100);
-            ctx.restore();
-        }
-
-        // Zone name
-        if (zoneTransitionTimer > 0) {
-            zoneTransitionTimer--;
-            ctx.save();
-            ctx.fillStyle = 'rgba(0,0,0,0.5)';
-            ctx.fillRect(0, 50, DESIGN_WIDTH, 50);
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 24px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(currentZoneName, DESIGN_WIDTH / 2, 82);
-            ctx.restore();
-        }
-    }
-
-    function drawWorld() {
-        ctx.save();
-        ctx.translate(camera.shakeX, camera.shakeY);
-
-        // Parallax background
-        drawParallax();
-
-        // Platforms
-        platforms.forEach(p => {
-            drawPlatform(p);
-        });
-
-        // Collectibles
-        collectibles.forEach(c => {
-            if (!c.collected) drawCollectible(c);
-        });
-
-        // Checkpoints
-        checkpoints.forEach(cp => {
-            drawCheckpoint(cp);
-        });
-
-        // NPCs
-        npcDialogues.forEach(npc => {
-            drawNPC(npc);
-        });
-
-        // Timbul spot
-        timbulLocations.forEach(t => {
-            drawTimbulSpot(t);
-        });
-
-        // Enemies
-        enemies.forEach(e => {
-            if (!e.dead) drawEnemy(e);
-        });
-
-        // Boss
-        if (activeBoss && !bossDefeated) {
-            drawBoss(activeBoss);
-        }
-
-        // Boss minions
-        if (activeBoss) {
-            activeBoss.minions.forEach(m => {
-                if (!m.dead) drawMinion(m);
-            });
-        }
-
-        // Boss projectiles
-        if (activeBoss) {
-            activeBoss.projectiles.forEach(proj => {
-                ctx.fillStyle = '#ffff00';
-                ctx.beginPath();
-                ctx.arc(proj.x, proj.y, proj.w / 2, 0, Math.PI * 2);
-                ctx.fill();
-            });
-            activeBoss.memoryShards.forEach(shard => {
-                ctx.fillStyle = '#aa88ff';
-                ctx.fillRect(shard.x - shard.w / 2, shard.y - shard.h / 2, shard.w, shard.h);
-            });
-        }
-
-        // Projectiles
-        projectiles.forEach(proj => {
-            ctx.fillStyle = proj.color || '#ff00ff';
-            ctx.beginPath();
-            ctx.arc(proj.x, proj.y, 4, 0, Math.PI * 2);
-            ctx.fill();
-        });
-
-        // Particles
-        particles.forEach(p => {
-            ctx.globalAlpha = p.life / p.maxLife;
-            ctx.fillStyle = p.color;
-            ctx.fillRect(p.x, p.y, p.size, p.size);
-            ctx.globalAlpha = 1;
-        });
-
-        // Player
-        if (player && !player.dead) {
-            drawPlayer(player);
-        } else if (player && player.dead) {
-            ctx.save();
-            ctx.fillStyle = 'rgba(255,0,0,0.5)';
-            ctx.font = 'bold 30px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('X', player.x + player.w / 2, player.y + player.h / 2);
-            ctx.restore();
-        }
-
-        // Boss trigger
-        const zoneData = getZoneData(currentZone);
-        if (zoneData.bossTrigger && !zoneData.bossTrigger.defeated && currentZone === 5) {
-            ctx.fillStyle = 'rgba(200,100,200,0.5)';
-            ctx.fillRect(zoneData.bossTrigger.x, zoneData.bossTrigger.y, zoneData.bossTrigger.w, zoneData.bossTrigger.h);
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '10px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('БОСС', zoneData.bossTrigger.x + 15, zoneData.bossTrigger.y + 18);
-        }
-
-        ctx.restore();
-    }
-
-    function drawParallax() {
-        // Background gradient
-        const gradient = ctx.createLinearGradient(0, 0, 0, DESIGN_HEIGHT);
-        if (currentZone === 1) {
-            gradient.addColorStop(0, '#87CEEB');
-            gradient.addColorStop(1, '#90EE90');
-        } else if (currentZone === 2) {
-            gradient.addColorStop(0, '#A0A0A0');
-            gradient.addColorStop(1, '#C0A0A0');
-        } else if (currentZone === 3) {
-            gradient.addColorStop(0, '#202040');
-            gradient.addColorStop(1, '#404080');
-        } else if (currentZone === 4) {
-            gradient.addColorStop(0, '#203020');
-            gradient.addColorStop(1, '#406040');
-        } else {
-            gradient.addColorStop(0, '#100020');
-            gradient.addColorStop(1, '#301040');
-        }
-        ctx.fillStyle = gradient;
-        ctx.fillRect(-10, -10, DESIGN_WIDTH + 20, DESIGN_HEIGHT + 20);
-
-        // Parallax shapes
-        ctx.globalAlpha = 0.3;
-        for (let i = 0; i < 5; i++) {
-            const px = (i * 90 + gameTime * 0.2) % (DESIGN_WIDTH + 100) - 50;
-            const py = 200 + i * 100;
-            ctx.fillStyle = currentZone === 3 || currentZone === 5 ? '#5555aa' : '#ffffff';
-            ctx.beginPath();
-            ctx.arc(px, py, 20 + i * 5, 0, Math.PI * 2);
-            ctx.fill();
-        }
-        ctx.globalAlpha = 1;
-
-        // Zone-specific details
-        if (currentZone === 3 || currentZone === 5) {
-            ctx.fillStyle = 'rgba(100,100,200,0.3)';
-            for (let i = 0; i < 10; i++) {
-                ctx.fillRect((i * 50 + gameTime * 0.5) % DESIGN_WIDTH, rand(0, DESIGN_HEIGHT), 2, 20);
-            }
-        }
-    }
-
-    function drawPlatform(p) {
-        ctx.fillStyle = p.color || '#5a8a5a';
-        if (p.type === 'ground') {
-            ctx.fillStyle = '#3a5a3a';
-            ctx.fillRect(p.x, p.y, p.w, p.h);
-            ctx.fillStyle = '#5a8a5a';
-            ctx.fillRect(p.x, p.y, p.w, 10);
-        } else if (p.type === 'moving') {
-            ctx.fillStyle = '#6a9a6a';
-            ctx.fillRect(p.x, p.y, p.w, p.h);
-            ctx.fillStyle = '#8aba8a';
-            ctx.fillRect(p.x, p.y, p.w, 5);
-        } else {
-            ctx.fillRect(p.x, p.y, p.w, p.h);
-            ctx.fillStyle = '#8aba8a';
-            ctx.fillRect(p.x, p.y, p.w, 4);
-        }
-    }
-
-    function drawCollectible(c) {
-        const bounce = Math.sin(gameTime * 0.1 + c.x) * 5;
-        if (c.type === 'coin') {
-            ctx.fillStyle = '#ffd700';
-            ctx.beginPath();
-            ctx.arc(c.x, c.y + bounce, 8, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = '#ffed4a';
-            ctx.beginPath();
-            ctx.arc(c.x - 2, c.y + bounce - 2, 4, 0, Math.PI * 2);
-            ctx.fill();
-        } else if (c.type === 'secret') {
-            ctx.fillStyle = '#ff00ff';
-            ctx.fillRect(c.x - 8, c.y + bounce - 8, 16, 16);
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(c.x - 4, c.y + bounce - 4, 8, 8);
-        }
-    }
-
-    function drawCheckpoint(cp) {
-        ctx.fillStyle = '#00ff00';
-        ctx.fillRect(cp.x - 5, cp.y - 15, 10, 20);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(cp.x - 2, cp.y - 12, 4, 14);
-        ctx.fillStyle = '#00ff00';
+  // шипы
+  for(const hz of zone.def.hazards){
+    if(hz.type==='spike'){
+      ctx.fillStyle='#bdbdbd';
+      const n=Math.floor(hz.w/14);
+      for(let i=0;i<n;i++){
+        const bx=hz.x-camera.x+i*14;
         ctx.beginPath();
-        ctx.arc(cp.x, cp.y + 5, 5, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.moveTo(bx, hz.y+hz.h-camera.y);
+        ctx.lineTo(bx+7, hz.y-camera.y);
+        ctx.lineTo(bx+14, hz.y+hz.h-camera.y);
+        ctx.closePath(); ctx.fill();
+      }
     }
+  }
 
-    function drawNPC(npc) {
-        ctx.fillStyle = '#ffcc00';
-        ctx.fillRect(npc.x, npc.y, npc.w, npc.h);
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(npc.x + 5, npc.y + 5, 5, 5);
-        ctx.fillRect(npc.x + npc.w - 10, npc.y + 5, 5, 5);
-        ctx.fillRect(npc.x + 5, npc.y + 15, npc.w - 10, 3);
-        // Dialogue indicator
-        if (npc.dialogueShown) {
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '12px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(npc.text, npc.x + npc.w / 2, npc.y - 10);
-        }
+  // предметы
+  for(const c of zone.collectibleInstances){
+    if(c.taken) continue;
+    const sx=c.x-camera.x, sy=c.y-camera.y+Math.sin(performance.now()/300+c.x)*3;
+    ctx.fillStyle = c.type==='secret'?'#c9a7ff':'#ffd54f';
+    ctx.beginPath(); ctx.arc(sx,sy,8,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#8d6e00'; ctx.lineWidth=1.5; ctx.stroke();
+  }
+
+  for(const e of zone.enemyInstances) drawEnemy(e);
+  for(const pr of projectiles) drawProjectile(pr);
+
+  drawTimbulCameo();
+  drawPlayer();
+  drawParticles();
+
+  if(bossActive) drawBoss();
+}
+function drawProjectile(p){
+  ctx.fillStyle = p.friendly? '#ffe15f':'#ff5252';
+  ctx.beginPath(); ctx.arc(p.x-camera.x,p.y-camera.y,5,0,Math.PI*2); ctx.fill();
+}
+function updateProjectiles(dt, zone){
+  for(let i=projectiles.length-1;i>=0;i--){
+    const p = projectiles[i];
+    p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=400*dt; p.life-=dt;
+    const pb={x:player.x,y:player.y,w:player.w,h:player.h};
+    if(!p.friendly && rectsOverlap(pb,{x:p.x-5,y:p.y-5,w:10,h:10}) && player.invuln<=0){
+      damagePlayer(10); projectiles.splice(i,1); continue;
     }
-
-    function drawTimbulSpot(t) {
-        ctx.fillStyle = 'rgba(100,100,200,0.5)';
-        ctx.fillRect(t.x, t.y, t.w, t.h);
-        ctx.fillStyle = '#6666cc';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('Тимбул', t.x + t.w / 2, t.y + t.h / 2);
+    if(p.life<=0 || p.x<camera.x-100 || p.x>camera.x+VW+100 || p.y>zone.def.groundY+250){
+      projectiles.splice(i,1);
     }
+  }
+}
 
-    function drawEnemy(e) {
-        ctx.save();
-        if (e.invincible > 0) {
-            ctx.globalAlpha = 0.5;
-        }
-        if (e.type === 'walker') {
-            ctx.fillStyle = e.color || '#ff6b6b';
-            ctx.fillRect(e.x, e.y, e.w, e.h);
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(e.x + 3, e.y + 5, 4, 4);
-            ctx.fillRect(e.x + e.w - 7, e.y + 5, 4, 4);
-            ctx.fillRect(e.x + 5, e.y + 15, e.w - 10, 3);
-            ctx.fillStyle = '#ff0000';
-            ctx.fillRect(e.x, e.y - 2, e.w, 3);
-        } else if (e.type === 'flyer') {
-            ctx.fillStyle = e.color || '#ffa500';
-            ctx.beginPath();
-            ctx.arc(e.x + e.w / 2, e.y + e.h / 2, e.w / 2, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(e.x + 4, e.y + 4, 3, 3);
-            ctx.fillRect(e.x + e.w - 7, e.y + 4, 3, 3);
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(e.x + e.w / 2 - 3, e.y + e.h / 2 + 3, 6, 3);
-        } else if (e.type === 'spitter') {
-            ctx.fillStyle = e.color || '#ff0080';
-            ctx.fillRect(e.x, e.y, e.w, e.h);
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(e.x + 5, e.y + 7, 5, 5);
-            ctx.fillRect(e.x + e.w - 10, e.y + 7, 5, 5);
-            ctx.fillStyle = '#ff00ff';
-            ctx.fillRect(e.x + e.w / 2 - 5, e.y + e.h, 10, 4);
-        }
-        ctx.restore();
-    }
+/* ============================================================
+   HUD
+============================================================ */
+function updateHUD(){
+  document.getElementById('healthBar').style.width = clamp(player.hp/player.maxHp*100,0,100)+'%';
+  document.getElementById('rageBar').style.width = clamp(player.rage/player.maxRage*100,0,100)+'%';
+  const memeBtn = document.getElementById('memeBtn');
+  const memeCd = document.getElementById('memeCd');
+  if(memeCooldown>0){ memeBtn.classList.add('cooldown'); memeCd.textContent = memeCooldown.toFixed(1)+'с'; }
+  else { memeBtn.classList.remove('cooldown'); memeCd.textContent=''; }
+}
 
-    function drawMinion(m) {
-        ctx.fillStyle = m.color || '#ff6b6b';
-        ctx.fillRect(m.x - m.w / 2, m.y - m.h / 2, m.w, m.h);
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(m.x - m.w / 4, m.y - m.h / 4, 3, 3);
-        ctx.fillRect(m.x + m.w / 4 - 3, m.y - m.h / 4, 3, 3);
-    }
+/* ============================================================
+   ГЛАВНЫЙ ЦИКЛ
+============================================================ */
+let lastTime=performance.now();
+function loop(now){
+  const dt = Math.min((now-lastTime)/1000, 0.033);
+  lastTime = now;
 
-    function drawBoss(boss) {
-        ctx.save();
-        if (boss.hitFlash > 0) {
-            ctx.fillStyle = '#ffffff';
-        } else {
-            ctx.fillStyle = boss.color;
-        }
-        ctx.beginPath();
-        ctx.arc(boss.x, boss.y, boss.w / 2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(boss.x - 10, boss.y - 8, 6, 6);
-        ctx.fillRect(boss.x + 4, boss.y - 8, 6, 6);
-        ctx.fillStyle = '#ff0000';
-        ctx.fillRect(boss.x - 8, boss.y + 5, 16, 4);
-        // Boss health bar
-        ctx.fillStyle = '#ff0000';
-        ctx.fillRect(50, 20, 300, 15);
-        ctx.fillStyle = '#00ff00';
-        ctx.fillRect(50, 20, 300 * (boss.hp / boss.maxHp), 15);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(boss.name, 200, 14);
-        ctx.restore();
-    }
+  if(gameState==='playing' || gameState==='boss'){
+    const zone = zoneState;
+    for(const p of zone.platformInstances) updatePlatform(p, dt);
+    updatePlayer(dt, zone);
+    for(const e of zone.enemyInstances) updateEnemy(e, dt, zone);
+    updateProjectiles(dt, zone);
+    updateBoss(dt, zone);
+    updateParticles(dt);
+    updateTimbulCameo(dt, zone);
+    if(memeCooldown>0) memeCooldown = Math.max(0, memeCooldown-dt);
 
-    function drawPlayer(p) {
-        ctx.save();
-        if (p.invincible > 0 && Math.floor(p.invincible / 3) % 2 === 0) {
-            ctx.globalAlpha = 0.4;
-        }
-        if (p.hurtTimer > 0) {
-            ctx.fillStyle = '#ff4444';
-        } else if (rage > 70) {
-            ctx.fillStyle = '#ff8800';
-        } else {
-            ctx.fillStyle = '#ff8c8c';
-        }
-        ctx.fillRect(p.x, p.y, p.w, p.h);
-        ctx.fillStyle = '#000000';
-        // Eyes
-        ctx.fillRect(p.x + 4, p.y + 6, 4, 4);
-        ctx.fillRect(p.x + p.w - 8, p.y + 6, 4, 4);
-        // Mouth
-        ctx.fillRect(p.x + 5, p.y + 16, p.w - 10, 3);
-        if (rage > 50) {
-            ctx.fillStyle = '#ff0000';
-            ctx.fillRect(p.x + 5, p.y + 14, p.w - 10, 2);
-        }
-        // Hair
-        ctx.fillStyle = '#cc4444';
-        ctx.fillRect(p.x + 2, p.y - 2, p.w - 4, 5);
-        ctx.fillRect(p.x + 5, p.y - 5, 4, 5);
-        ctx.fillRect(p.x + p.w - 9, p.y - 5, 4, 5);
-        // Attack animation
-        if (p.attackTimer > 0) {
-            ctx.fillStyle = '#ffffff';
-            if (p.facing > 0) {
-                ctx.fillRect(p.x + p.w, p.y + 5, ATTACK_RANGE, 5);
-            } else {
-                ctx.fillRect(p.x - ATTACK_RANGE, p.y + 5, ATTACK_RANGE, 5);
-            }
-        }
-        // Dash effect
-        if (p.dashTimer > 0) {
-            ctx.fillStyle = '#88ccff';
-            ctx.fillRect(p.x - 5, p.y, 5, p.h);
-            ctx.fillRect(p.x + p.w, p.y, 5, p.h);
-        }
-        ctx.restore();
-    }
+    // камера
+    const targetX = clamp(player.x - VW*0.4, 0, Math.max(0, zone.def.width-VW));
+    camera.x += (targetX-camera.x)*Math.min(1, dt*6);
+    camera.y = 0;
 
-    function drawUI() {
-        // Health
-        ctx.fillStyle = '#ff0000';
-        for (let i = 0; i < maxHealth; i++) {
-            if (i < health) {
-                ctx.fillRect(20 + i * 25, 20, 20, 20);
-            } else {
-                ctx.fillRect(20 + i * 25, 20, 20, 5);
-            }
-        }
-        // Rage bar
-        ctx.fillStyle = '#333333';
-        ctx.fillRect(20, 50, 150, 15);
-        ctx.fillStyle = '#ff4400';
-        ctx.fillRect(20, 50, 150 * (rage / maxRage), 15);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '10px Arial';
-        ctx.textAlign = 'left';
-        ctx.fillText('ЯРОСТЬ', 175, 61);
-        // Score
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '16px Arial';
-        ctx.textAlign = 'right';
-        ctx.fillText('СЧЁТ: ' + score, DESIGN_WIDTH - 20, 35);
-        // Boss indicator
-        if (activeBoss && !bossDefeated) {
-            ctx.fillStyle = '#ff0000';
-            ctx.font = 'bold 14px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(bossNameDisplay, DESIGN_WIDTH / 2, 60);
-        }
-    }
+    if(shakeTime>0){ shakeTime-=dt; } else { shakeMag=0; }
 
-    function drawDialogue() {
-        if (!currentDialogue) return;
-        ctx.save();
-        ctx.fillStyle = 'rgba(0,0,0,0.7)';
-        ctx.fillRect(20, DESIGN_HEIGHT - 150, DESIGN_WIDTH - 40, 120);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '14px Arial';
-        ctx.textAlign = 'left';
-        const words = currentDialogue.split(' ');
-        let line = '';
-        let yPos = DESIGN_HEIGHT - 130;
-        words.forEach(word => {
-            if ((line + ' ' + word).length > 35) {
-                ctx.fillText(line, 35, yPos);
-                line = word;
-                yPos += 20;
-            } else {
-                line = (line + ' ' + word).trim();
-            }
-        });
-        if (line) ctx.fillText(line, 35, yPos);
-        ctx.fillStyle = '#aaaaaa';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('[Нажмите, чтобы продолжить]', DESIGN_WIDTH / 2, DESIGN_HEIGHT - 40);
-        ctx.restore();
-    }
+    ctx.save();
+    if(shakeMag>0){ ctx.translate(rand(-shakeMag,shakeMag), rand(-shakeMag,shakeMag)); }
+    drawZone(zone);
+    ctx.restore();
 
-    function drawMenu() {
-        ctx.save();
-        ctx.fillStyle = 'rgba(0,0,0,0.8)';
-        ctx.fillRect(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 32px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('РЭМИЛИЯ И ТИМБУЛ:', DESIGN_WIDTH / 2, 150);
-        ctx.fillText('СМАКОГРАДСКИЙ ПЕРЕПОЛОХ', DESIGN_WIDTH / 2, 190);
-        ctx.font = '16px Arial';
-        ctx.fillText('История о ярости, мемах и Тимбуле', DESIGN_WIDTH / 2, 230);
-        // Menu buttons
-        drawMenuButton('НОВАЯ ИГРА', 280, () => { startNewGame(); });
-        drawMenuButton('ПРОДОЛЖИТЬ', 340, () => { continueGame(); });
-        drawMenuButton('НАСТРОЙКИ', 400, () => { showSettings(); });
-        ctx.fillStyle = '#aaaaaa';
-        ctx.font = '12px Arial';
-        ctx.fillText('Вертикальный экран: 9:16', DESIGN_WIDTH / 2, 650);
-        ctx.restore();
-    }
+    updateHUD();
+  }
 
-    function drawMenuButton(label, y, action) {
-        ctx.save();
-        ctx.fillStyle = '#444488';
-        ctx.fillRect(DESIGN_WIDTH / 2 - 100, y, 200, 45);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '18px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(label, DESIGN_WIDTH / 2, y + 28);
-        ctx.restore();
-        if (gameState === 'menu' && mouseX >= DESIGN_WIDTH / 2 - 100 && mouseX <= DESIGN_WIDTH / 2 + 100 && mouseY >= y && mouseY <= y + 45) {
-            if (mouseClicked) {
-                action();
-                mouseClicked = false;
-            }
-        }
-    }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
 
-    function showSettings() {
-        gameState = 'settings';
-        AudioSys.startMusic('menu');
-    }
+/* ============================================================
+   ЭКРАНЫ / UI ЛОГИКА
+============================================================ */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function setPlayingUIVisible(v){
+  document.getElementById('hud').style.display = v?'flex':'none';
+  document.getElementById('zoneLabel').style.display = v?'block':'none';
+  document.getElementById('pauseBtn').style.display = v?'block':'none';
+  document.getElementById('controls').style.display = v?'block':'none';
+}
 
-    function drawSettings() {
-        if (gameState !== 'settings') return;
-        ctx.save();
-        ctx.fillStyle = 'rgba(0,0,0,0.8)';
-        ctx.fillRect(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 28px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('НАСТРОЙКИ', DESIGN_WIDTH / 2, 100);
-        // Music toggle
-        drawSettingsToggle('Музыка', 180, AudioSys.settings.music, (val) => { AudioSys.settings.music = val; saveSettings(); if (val) AudioSys.startMusic('menu'); else AudioSys.stopMusic(); });
-        drawSettingsToggle('Звуки', 240, AudioSys.settings.sound, (val) => { AudioSys.settings.sound = val; saveSettings(); });
-        drawSettingsToggle('Вибрация', 300, AudioSys.settings.vibration, (val) => { AudioSys.settings.vibration = val; saveSettings(); });
-        drawMenuButton('НАЗАД', 400, () => { gameState = 'menu'; AudioSys.startMusic('menu'); });
-        ctx.restore();
-    }
+document.getElementById('btnNewGame').addEventListener('click', ()=>{
+  ensureAudio(); SFX.ui();
+  SAVE = defaultSave(); SAVE.progress.hasSave=true; persistSave();
+  currentZoneIndex=0;
+  buildZone(0);
+  gameState='playing';
+  showScreen('screenMain'); // скрываем оверлей
+  document.getElementById('screenMain').classList.remove('active');
+  setPlayingUIVisible(true);
+});
+document.getElementById('btnContinue').addEventListener('click', ()=>{
+  ensureAudio(); SFX.ui();
+  if(!SAVE.progress.hasSave){ floatMessage('Сохранений нет, начинаем новую!', 100,300); currentZoneIndex=0; }
+  else currentZoneIndex = clamp(SAVE.progress.zoneIndex,0,ZONES.length-1);
+  buildZone(currentZoneIndex);
+  gameState='playing';
+  document.getElementById('screenMain').classList.remove('active');
+  setPlayingUIVisible(true);
+});
+document.getElementById('btnSettings').addEventListener('click', ()=>{ ensureAudio(); SFX.ui(); showScreen('screenSettings'); });
+document.getElementById('btnSettingsBack').addEventListener('click', ()=>{ SFX.ui(); showScreen('screenMain'); });
 
-    function drawSettingsToggle(label, y, value, onChange) {
-        ctx.save();
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '18px Arial';
-        ctx.textAlign = 'left';
-        ctx.fillText(label, 60, y);
-        ctx.fillStyle = value ? '#00ff00' : '#ff0000';
-        ctx.fillRect(DESIGN_WIDTH - 140, y - 15, 50, 30);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(value ? DESIGN_WIDTH - 115 : DESIGN_WIDTH - 135, y - 12, 20, 24);
-        ctx.restore();
-        if (mouseX >= DESIGN_WIDTH - 140 && mouseX <= DESIGN_WIDTH - 90 && mouseY >= y - 15 && mouseY <= y + 15) {
-            if (mouseClicked) {
-                onChange(!value);
-                mouseClicked = false;
-            }
-        }
-    }
+function bindToggle(id, key){
+  const el = document.getElementById(id);
+  const refresh=()=> el.classList.toggle('on', SAVE.settings[key]);
+  refresh();
+  el.addEventListener('click', ()=>{
+    SAVE.settings[key] = !SAVE.settings[key];
+    persistSave(); refresh(); SFX.ui();
+    if(key==='music'){ if(SAVE.settings.music && zoneState) startMusic(zoneState.def.musicKey); else stopMusic(); }
+  });
+}
+bindToggle('toggleMusic','music');
+bindToggle('toggleSfx','sfx');
+bindToggle('toggleVibe','vibe');
 
-    function drawPause() {
-        ctx.save();
-        ctx.fillStyle = 'rgba(0,0,0,0.7)';
-        ctx.fillRect(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 32px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('ПАУЗА', DESIGN_WIDTH / 2, 200);
-        drawMenuButton('ПРОДОЛЖИТЬ', 280, () => { togglePause(); });
-        drawMenuButton('НАЧАТЬ ЗАНОВО', 340, () => { startNewGame(); });
-        drawMenuButton('В МЕНЮ', 400, () => { gameState = 'menu'; AudioSys.startMusic('menu'); });
-        ctx.restore();
-    }
+document.getElementById('pauseBtn').addEventListener('click', ()=>{
+  if(gameState==='playing' || gameState==='boss'){
+    prevGameStateBeforeDialogue = gameState;
+    gameState='paused'; showScreen('screenPause'); SFX.ui();
+  }
+});
+document.getElementById('btnResume').addEventListener('click', ()=>{
+  gameState = prevGameStateBeforeDialogue||'playing';
+  document.getElementById('screenPause').classList.remove('active');
+  SFX.ui();
+});
+document.getElementById('btnRestartZone').addEventListener('click', ()=>{
+  buildZone(currentZoneIndex);
+  gameState='playing';
+  document.getElementById('screenPause').classList.remove('active');
+});
+document.getElementById('btnExitMenu').addEventListener('click', ()=>{
+  gameState='menu'; stopMusic();
+  setPlayingUIVisible(false);
+  showScreen('screenMain');
+});
 
-    function drawGameOver() {
-        ctx.save();
-        ctx.fillStyle = 'rgba(0,0,0,0.8)';
-        ctx.fillRect(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
-        ctx.fillStyle = '#ff0000';
-        ctx.font = 'bold 36px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('GAME OVER', DESIGN_WIDTH / 2, 250);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '18px Arial';
-        ctx.fillText('Рэмилия временно в ярости', DESIGN_WIDTH / 2, 290);
-        drawMenuButton('ПОПРОБОВАТЬ СНОВА', 350, () => { resetAfterDeath(); });
-        drawMenuButton('В МЕНЮ', 410, () => { gameState = 'menu'; AudioSys.startMusic('menu'); });
-        ctx.restore();
-    }
+function showGameOver(){
+  gameState='gameover'; stopMusic();
+  const lines = [
+    '"Это даже не больно. Это оскорбительно." — Рэмилия',
+    '"В следующий раз буду бить первой." — Рэмилия',
+    '"Котомка была права. Опять." — Рэмилия',
+  ];
+  document.getElementById('gameOverText').textContent = pick(lines);
+  showScreen('screenGameOver');
+}
+document.getElementById('btnRetry').addEventListener('click', ()=>{
+  buildZone(currentZoneIndex); gameState='playing';
+  document.getElementById('screenGameOver').classList.remove('active');
+});
+document.getElementById('btnGoMenu').addEventListener('click', ()=>{
+  gameState='menu'; setPlayingUIVisible(false); showScreen('screenMain');
+});
 
-    function drawFinal() {
-        ctx.save();
-        ctx.fillStyle = 'rgba(0,0,0,0.9)';
-        ctx.fillRect(0, 0, DESIGN_WIDTH, DESIGN_HEIGHT);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 24px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('ФИНАЛ', DESIGN_WIDTH / 2, 150);
-        ctx.font = '16px Arial';
-        ctx.fillText('Тимбул исчезает, оставляя после себя', DESIGN_WIDTH / 2, 200);
-        ctx.fillText('только тишину и лёгкую грусть.', DESIGN_WIDTH / 2, 230);
-        ctx.fillText('Рэмилия смотрит на Смакоград.', DESIGN_WIDTH / 2, 260);
-        ctx.fillText('Она больше не злится.', DESIGN_WIDTH / 2, 290);
-        ctx.fillText('Теперь она понимает.', DESIGN_WIDTH / 2, 320);
-        ctx.fillText('Тимбул был не просто мемом.', DESIGN_WIDTH / 2, 350);
-        ctx.fillText('Он был отражением её собственной ярости,', DESIGN_WIDTH / 2, 380);
-        ctx.fillText('её одиночества и её силы.', DESIGN_WIDTH / 2, 410);
-        ctx.fillText('И теперь, наконец, она может просто быть.', DESIGN_WIDTH / 2, 440);
-        ctx.fillStyle = '#888888';
-        ctx.font = '14px Arial';
-        ctx.fillText('Спасибо за игру.', DESIGN_WIDTH / 2, 550);
-        ctx.fillText('Счёт: ' + score + ' | Секретов: ' + secretsFound.length, DESIGN_WIDTH / 2, 580);
-        drawMenuButton('В МЕНЮ', 620, () => { gameState = 'menu'; AudioSys.startMusic('menu'); });
-        ctx.restore();
-    }
+function showVictory(){
+  gameState='victory'; stopMusic();
+  player.state='victory';
+  document.getElementById('victoryText').innerHTML =
+    'Рэмилия открывает глаза в белой комнате. Пахнет больницей, а не Смакоградом.<br><br>' +
+    'На тумбочке — старый детский рисунок. Фиолетовое существо с кривой улыбкой.<br><br>' +
+    '"...ну привет," — думает она и почему-то улыбается.<br><br>' +
+    'Собрано монет: ' + player.coins + '. Найдено секретов: ' + SAVE.progress.secretsFound.length + '.';
+  showScreen('screenVictory');
+}
+document.getElementById('btnVictoryMenu').addEventListener('click', ()=>{
+  gameState='menu'; setPlayingUIVisible(false); showScreen('screenMain');
+});
 
-    // ==================== MOUSE INPUT ====================
-    let mouseX = 0;
-    let mouseY = 0;
-    let mouseClicked = false;
+// первый клик — разблокировать аудио (требование браузеров)
+window.addEventListener('click', ensureAudio, {once:true});
+window.addEventListener('touchstart', ensureAudio, {once:true});
 
-    function initMouse() {
-        canvas.addEventListener('pointerdown', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            mouseX = (e.clientX - rect.left) / scaleX;
-            mouseY = (e.clientY - rect.top) / scaleY;
-            mouseClicked = true;
-            if (gameState === 'dialogue' && currentDialogue) {
-                advanceDialogue();
-            } else if (gameState === 'menu') {
-                // Handled in button draw
-            } else if (gameState === 'paused') {
-                // Handled in button draw
-            } else if (gameState === 'gameover') {
-                // Handled in button draw
-            } else if (gameState === 'settings') {
-                // Handled in button draw
-            } else if (gameState === 'final') {
-                // Handled in button draw
-            }
-        });
-        canvas.addEventListener('pointerup', () => {
-            mouseClicked = false;
-        });
-        canvas.addEventListener('pointermove', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            mouseX = (e.clientX - rect.left) / scaleX;
-            mouseY = (e.clientY - rect.top) / scaleY;
-        });
-        // Prevent context menu
-        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-    }
-
-    // ==================== GAME LOOP ====================
-    function update() {
-        gameTime++;
-        if (memeCooldown > 0) memeCooldown--;
-        if (memeTimer > 0) memeTimer--;
-
-        if (gameState === 'playing') {
-            updatePlayer();
-            updateEnemies();
-            updateCollectibles();
-            updateParticles();
-            // Check checkpoints
-            checkpoints.forEach(cp => {
-                if (circleRectCollide(cp.x, cp.y, 20, player) && currentCheckpoint?.id !== cp.id) {
-                    currentCheckpoint = cp;
-                    AudioSys.sfx('checkpoint');
-                    showDialogue('Чекпоинт! Рэмилия: Я запомню это место. Или не запомню.');
-                    saveGame();
-                }
-            });
-            // Check NPC dialogues
-            npcDialogues.forEach(npc => {
-                if (circleRectCollide(npc.x + npc.w / 2, npc.y + npc.h / 2, 35, player)) {
-                    npc.dialogueShown = true;
-                    if (!npc.shownOnce) {
-                        npc.shownOnce = true;
-                        showDialogue(npc.text);
-                    }
-                } else {
-                    npc.dialogueShown = false;
-                }
-            });
-            // Check Timbul spots
-            timbulLocations.forEach(t => {
-                if (circleRectCollide(t.x + t.w / 2, t.y + t.h / 2, 40, player) && !t.triggered) {
-                    t.triggered = true;
-                    timbulActive = true;
-                    timbulTimer = 150;
-                    timbulMessage = t.message;
-                    AudioSys.sfx('secret');
-                    showDialogue(t.message);
-                }
-            });
-            // Check boss trigger
-            const zoneData = getZoneData(currentZone);
-            if (zoneData.bossTrigger && !zoneData.bossTrigger.defeated && !activeBoss && !bossDefeated) {
-                if (rectCollide(player, zoneData.bossTrigger)) {
-                    zoneData.bossTrigger.defeated = true;
-                    startBoss(zoneData.bossTrigger.boss, currentZone);
-                }
-            }
-            // Check exit
-            if (zoneData.exitPoint && rectCollide(player, zoneData.exitPoint)) {
-                if (currentZone < 5) {
-                    if (unlockedZones.includes(currentZone + 1)) {
-                        currentCheckpoint = null;
-                        loadZone(currentZone + 1);
-                        zoneTransitionTimer = 60;
-                    }
-                }
-            }
-            // Zone transition
-            if (zoneTransitionTimer > 0) zoneTransitionTimer--;
-            // Random rage events
-            if (rage > 80 && Math.random() < 0.005) {
-                showDialogue('Рэмилия: Я ВСЁ УНИЧТОЖУ!');
-                camera.shakeIntensity = 5;
-                AudioSys.sfx('rage');
-            }
-        } else if (gameState === 'boss') {
-            updatePlayer();
-            updateBoss();
-            updateEnemies();
-            updateParticles();
-        } else if (gameState === 'dialogue') {
-            updateParticles();
-        } else if (gameState === 'paused') {
-            // Nothing
-        } else if (gameState === 'menu') {
-            updateParticles();
-        } else if (gameState === 'settings') {
-            // Nothing
-        } else if (gameState === 'gameover') {
-            updateParticles();
-        } else if (gameState === 'final') {
-            updateParticles();
-        }
-
-        // Update moving platforms
-        platforms.forEach(p => {
-            if (p.type === 'moving' && p.moveSpeed) {
-                p.moveTimer += p.moveSpeed;
-                p.x = p.origX + Math.sin(p.moveTimer) * (p.moveX || 0);
-                p.y = p.origY + Math.sin(p.moveTimer + p.moveOffset) * (p.moveY || 0);
-            }
-        });
-    }
-
-    function loop() {
-        update();
-        render();
-        requestAnimationFrame(loop);
-    }
-
-    // ==================== INIT ====================
-    function init() {
-        loadSettings();
-        AudioSys.init();
-        initInput();
-        initMouse();
-        showMenu();
-        loop();
-    }
-
-    init();
 })();
 </script>
 </body>
